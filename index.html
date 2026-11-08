@@ -14,6 +14,10 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
 
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] hidden bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-bold">
+        <i class="fa-solid fa-circle-check ml-2"></i><span id="toastText"></span>
+    </div>
+
     <!-- Auth Screen: login / register / pending -->
     <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-5">
@@ -246,7 +250,7 @@
             } else {
                 const username = $('regUser').value.trim();
                 if (!username) return authMsg('נא להזין שם');
-                const { error } = await sb.auth.signUp({ email, password, options: { data: { username, requested_role: $('regRole').value } } });
+                const { error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname, data: { username, requested_role: $('regRole').value } } });
                 if (error) return authMsg(error.message);
                 await sb.auth.signOut();
                 setMode('login');
@@ -500,7 +504,19 @@
             await loadUsers(); renderUsers();
         }
 
-        boot();
+        function toast(t) {
+            $('toastText').textContent = t;
+            $('toast').classList.remove('hidden');
+            setTimeout(() => $('toast').classList.add('hidden'), 7000);
+        }
+        // חזרה מקישור האימות במייל
+        const justConfirmed = /type=(signup|email)/.test(location.hash);
+        const linkFailed = /error_code=|error=/.test(location.hash);
+        boot().then(() => {
+            if (justConfirmed) toast('האימייל אושר בהצלחה');
+            if (linkFailed) authMsg('הקישור במייל פג תוקף או כבר נוצל. נסה להתחבר, או הירשם מחדש');
+            if (justConfirmed || linkFailed) history.replaceState(null, '', location.pathname);
+        });
     </script>
 </body>
 </html>

@@ -63,6 +63,7 @@
                     <button type="button" onclick="boot()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium">בדוק שוב</button>
                     <button type="button" onclick="logout()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium">התנתק</button>
                 </div>
+                <button type="button" onclick="deleteMyAccount()" class="text-xs text-red-500 hover:underline">מחיקת החשבון שלי</button>
             </div>
         </div>
     </div>
@@ -78,9 +79,14 @@
                         <p class="text-xs text-slate-400" id="userInfoDisplay"></p>
                     </div>
                 </div>
+                <div class="flex items-center gap-2">
+                <button type="button" onclick="deleteMyAccount()" title="מחק את החשבון שלי" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm transition duration-200 flex items-center space-x-2 space-x-reverse">
+                    <i class="fa-solid fa-user-xmark"></i><span class="hidden sm:inline">מחק חשבון</span>
+                </button>
                 <button type="button" onclick="logout()" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm transition duration-200 flex items-center space-x-2 space-x-reverse">
                     <i class="fa-solid fa-right-from-bracket"></i><span class="hidden sm:inline">התנתק</span>
                 </button>
+                </div>
             </div>
             <div class="bg-slate-800 border-t border-slate-700">
                 <div class="max-w-7xl mx-auto px-2 md:px-4 flex space-x-2 md:space-x-4 space-x-reverse overflow-x-auto">
@@ -492,6 +498,7 @@
                         </select>
                         <button type="button" onclick="setApproval('${u.id}', true)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">${u.approved ? 'עדכן הרשאה' : 'אשר'}</button>
                         ${u.approved ? `<button type="button" onclick="setApproval('${u.id}', false)" class="bg-red-50 hover:bg-red-600 hover:text-white text-red-600 px-3 py-1.5 rounded-lg text-xs font-medium transition">חסום</button>` : ''}
+                        <button type="button" onclick="deleteUser('${u.id}')" title="מחק משתמש" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"><i class="fa-solid fa-trash"></i></button>
                     </div>`}
                 </div>`;
             }).join('');
@@ -504,6 +511,25 @@
             await loadUsers(); renderUsers();
         }
 
+        function deleteErr(error) {
+            return /last admin/i.test(error.message)
+                ? 'לא ניתן למחוק את המנהל האחרון במערכת. מנה קודם מנהל נוסף.'
+                : 'שגיאה במחיקה: ' + error.message;
+        }
+        async function deleteMyAccount() {
+            if (!confirm('למחוק את החשבון שלך לצמיתות? לא ניתן לשחזר פעולה זו.')) return;
+            const { error } = await sb.rpc('delete_user', { target: me.id });
+            if (error) return alert(deleteErr(error));
+            await logout();
+            authMsg('החשבון נמחק', true);
+        }
+        async function deleteUser(id) {
+            const u = users.find(x => x.id === id);
+            if (!u || !confirm(`למחוק את המשתמש "${u.username}" לצמיתות? קריאות ששויכו אליו יישארו ללא שיוך.`)) return;
+            const { error } = await sb.rpc('delete_user', { target: id });
+            if (error) return alert(deleteErr(error));
+            await loadUsers(); renderUsers(); await loadCalls();
+        }
         function toast(t) {
             $('toastText').textContent = t;
             $('toast').classList.remove('hidden');

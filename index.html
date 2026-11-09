@@ -115,6 +115,9 @@
                         <button type="button" id="newCallBtn" onclick="openNewCallModal()" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium text-sm items-center justify-center space-x-2 space-x-reverse shadow transition">
                             <i class="fa-solid fa-plus"></i><span>פתח קריאה חדשה</span>
                         </button>
+                        <button type="button" onclick="openDailyModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center space-x-2 space-x-reverse shadow transition">
+                            <i class="fa-brands fa-whatsapp text-base"></i><span>סיכום יום בוואטסאפ</span>
+                        </button>
                         <div class="relative flex-1 sm:w-64">
                             <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 text-sm"></i>
                             <input type="text" id="searchSite" oninput="renderCalls()" placeholder="חיפוש אתר או תקלה..." class="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
@@ -175,6 +178,28 @@
                     <button type="button" onclick="closeModal('newCallModal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs md:text-sm font-medium">ביטול</button>
                     <button type="button" onclick="saveNewCall()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs md:text-sm font-medium shadow">שמור קריאה</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Daily WhatsApp Summary -->
+    <div id="dailyModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-5 md:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base md:text-lg font-bold text-slate-900">סיכום יום לשליחה בוואטסאפ</h3>
+                <button type="button" onclick="closeModal('dailyModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">תאריך הסיכום</label>
+                <input type="date" id="dailyDate" onchange="refreshDailyText()" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">תצוגה מקדימה (אפשר לערוך לפני השליחה)</label>
+                <textarea id="dailyText" rows="12" class="w-full border border-gray-300 rounded-lg p-3 text-xs bg-slate-50 text-gray-800 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2 space-x-reverse pt-1">
+                <button type="button" onclick="closeModal('dailyModal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-xs md:text-sm font-medium">סגור</button>
+                <button type="button" onclick="sendDailyWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium flex items-center space-x-1 space-x-reverse shadow"><i class="fa-brands fa-whatsapp"></i><span>שלח בוואטסאפ</span></button>
             </div>
         </div>
     </div>
@@ -511,6 +536,40 @@
             await loadUsers(); renderUsers();
         }
 
+        const localToday = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        function buildDailySummary(date) {
+            const day = calls.filter(c => c.call_date === date);
+            if (!day.length) return '';
+            const done = day.filter(c => c.status === 'הושלמה').length;
+            const open = day.filter(c => c.status === 'חדשה' || c.status === 'בטיפול').length;
+            const cancelled = day.filter(c => c.status === 'מבוטלת').length;
+            const hours = day.reduce((sum, c) => sum + (parseFloat(c.hours) || 0), 0);
+            let t = `📋 *סיכום יום - ${me.username}*\n📅 ${date.split('-').reverse().join('/')}\n-------------------\n`;
+            t += `✅ הושלמו: ${done}\n⏳ פתוחות / בטיפול: ${open}\n`;
+            if (cancelled) t += `🚫 בוטלו: ${cancelled}\n`;
+            t += `⏱️ סה"כ שעות: ${hours}\n-------------------`;
+            day.forEach((c, i) => {
+                t += `\n\n${i + 1}. *${c.site_name}*` + (isAdmin() ? ` (טכנאי: ${techName(c.assigned_to)})` : '');
+                t += `\n   • תקלה: ${c.problem}\n   • סטטוס: ${c.status}`;
+                if (c.solution) t += `\n   • פתרון: ${c.solution}`;
+                if (c.parts) t += `\n   • חלקים: ${c.parts}`;
+                if (c.hours) t += `\n   • שעות: ${c.hours}`;
+            });
+            return t;
+        }
+        function openDailyModal() {
+            $('dailyDate').value = localToday();
+            refreshDailyText();
+            $('dailyModal').classList.remove('hidden');
+        }
+        function refreshDailyText() {
+            $('dailyText').value = buildDailySummary($('dailyDate').value) || 'אין קריאות רשומות בתאריך זה';
+        }
+        function sendDailyWhatsApp() {
+            const text = $('dailyText').value.trim();
+            if (!text || text === 'אין קריאות רשומות בתאריך זה') return alert('אין מה לשלוח בתאריך הזה.');
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+        }
         function deleteErr(error) {
             return /last admin/i.test(error.message)
                 ? 'לא ניתן למחוק את המנהל האחרון במערכת. מנה קודם מנהל נוסף.'

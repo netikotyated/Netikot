@@ -27,7 +27,6 @@
                 <p id="authSub" class="text-sm text-gray-500 mt-1">התחבר למערכת עם פרטי המשתמש שלך</p>
             </div>
 
-            <!-- טופס התחברות / הרשמה -->
             <form id="authForm" onsubmit="submitAuth(event)" class="space-y-4">
                 <div id="regFields" class="space-y-4 hidden">
                     <div>
@@ -56,7 +55,6 @@
                 <button type="button" id="toggleMode" onclick="setMode(mode==='login'?'register':'login')" class="w-full text-sm text-blue-600 hover:underline">אין לך משתמש? הירשם</button>
             </form>
 
-            <!-- תיבת המתנה לאישור מנהל -->
             <div id="pendingBox" class="hidden text-center space-y-4">
                 <div class="bg-amber-100 text-amber-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-hourglass-half"></i></div>
                 <h2 class="font-bold text-lg text-slate-900">החשבון ממתין לאישור מנהל</h2>
@@ -106,4 +104,4 @@
             <!-- Board -->
             <div id="viewBoard" class="space-y-4 md:space-y-6">
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <button type
+                    <button type="button" onclick="set

@@ -18,7 +18,7 @@
         <i class="fa-solid fa-circle-check ml-2"></i><span id="toastText"></span>
     </div>
 
-    <!-- Auth Screen -->
+    <!-- Auth Screen: login / register / pending -->
     <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-5">
             <div class="text-center">
@@ -58,7 +58,7 @@
             <div id="pendingBox" class="hidden text-center space-y-4">
                 <div class="bg-amber-100 text-amber-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-hourglass-half"></i></div>
                 <h2 class="font-bold text-lg text-slate-900">החשבון ממתין לאישור מנהל</h2>
-                <p class="text-sm text-gray-500">מנהל המערכת צריך לאשר את המשתמש שלך לפני הכנסה למערכת.</p>
+                <p class="text-sm text-gray-500">מנהל המערכת צריך לאשר את המשתמש שלך לפני הכניסה. נסה שוב מאוחר יותר.</p>
                 <div class="flex gap-2">
                     <button type="button" onclick="boot()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium">בדוק שוב</button>
                     <button type="button" onclick="logout()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium">התנתק</button>
@@ -101,6 +101,7 @@
         </header>
 
         <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+            <!-- Board -->
             <div id="viewBoard" class="space-y-4 md:space-y-6">
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <button type="button" onclick="setCategoryFilter('ALL')" id="catBtn_ALL" class="p-3 rounded-xl font-medium text-xs md:text-sm flex items-center justify-center space-x-2 space-x-reverse transition bg-blue-600 text-white shadow-sm"><i class="fa-solid fa-layer-group"></i><span>כל הקריאות</span></button>
@@ -126,6 +127,7 @@
                 <div id="groupedCallsContainer" class="space-y-6"></div>
             </div>
 
+            <!-- Users (admin) -->
             <div id="viewUsers" class="space-y-4 md:space-y-6 hidden">
                 <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
                     <div>
@@ -142,7 +144,7 @@
         </button>
     </div>
 
-    <!-- Modal: New Call -->
+    <!-- Modal: New Call (admin) -->
     <div id="newCallModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden">
         <div class="bg-white rounded-2xl max-w-lg w-full p-5 md:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
@@ -151,10 +153,9 @@
             </div>
             <div class="space-y-3 md:space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="relative">
+                    <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">שם אתר / מצלמה *</label>
-                        <input type="text" id="newSiteName" oninput="filterSitesDropdown()" onfocus="showSitesDropdown()" onblur="hideSitesDropdown()" placeholder="הקלד לחיפוש או בחירה..." autocomplete="off" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                        <div id="sitesCustomDropdown" class="hidden absolute top-full right-0 left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 text-xs md:text-sm"></div>
+                        <input type="text" id="newSiteName" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">שייך למשתמש (טכנאי) *</label>
@@ -175,7 +176,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">חטמ"ר / אזור</label>
-                    <input type="text" id="newRegion" list="regionList" placeholder="לדוגמה: בנימין" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                    <input type="text" id="newRegion" list="regionList" placeholder="לדוגמה: חטמ&quot;ר בנימין" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                     <datalist id="regionList"></datalist>
                 </div>
                 <div>
@@ -279,34 +280,38 @@
     </div>
 
     <script>
+        // ====== הגדרות Supabase: להחליף בערכים שלך (Settings -> API) ======
         const SUPABASE_URL = 'https://medlpvrzeyeniijqyswo.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_CsnauV9VTIQZ957QFeYJ4w_ZvbZRWcK';
-        
+        // ===================================================================
         let sb = null;
+        const CONFIG_ERR = 'חסרים פרטי חיבור ל-Supabase בקובץ index.html (SUPABASE_URL ו-SUPABASE_KEY). יש להדביק את הערכים מ-Settings → API.';
         try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.error(e); }
 
         const $ = id => document.getElementById(id);
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const ROLE = { admin: 'מנהל מערכת', user: 'משתמש רגיל' };
 
-        let me = null, calls = [], users = [], sitesList = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
+        let me = null, calls = [], users = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
         const isAdmin = () => me && me.role === 'admin';
 
+        /* ---------- Auth ---------- */
         function authMsg(t, ok) {
             const m = $('authMsg'); m.textContent = t;
             m.className = 'text-sm text-center font-bold ' + (ok ? 'text-emerald-600' : 'text-red-500');
         }
         function setMode(m) {
             mode = m;
-            $('regFields').classList.toggle('hidden', m !== 'register');$('authBtn').textContent = m === 'login' ? 'כניסה למערכת' : 'הרשמה';
+            $('regFields').classList.toggle('hidden', m !== 'register');
+            $('authBtn').textContent = m === 'login' ? 'כניסה למערכת' : 'הרשמה';
             $('toggleMode').textContent = m === 'login' ? 'אין לך משתמש? הירשם' : 'יש לך משתמש? התחבר';
             $('authSub').textContent = m === 'login' ? 'התחבר למערכת עם פרטי המשתמש שלך' : 'צור משתמש חדש. הגישה תופעל לאחר אישור מנהל';
             $('authMsg').classList.add('hidden');
         }
         async function submitAuth(e) {
             e.preventDefault();
-            if (!sb) return authMsg('שגיאת חיבור');
-            const email = $('authEmail').value.trim(), password =$('authPass').value;
+            if (!sb) return authMsg(CONFIG_ERR);
+            const email = $('authEmail').value.trim(), password = $('authPass').value;
             if (mode === 'login') {
                 const { error } = await sb.auth.signInWithPassword({ email, password });
                 if (error) return authMsg(/not confirmed/i.test(error.message) ? 'יש לאשר קודם את כתובת האימייל בקישור שנשלח אליך' : 'אימייל או סיסמה שגויים');
@@ -318,88 +323,47 @@
                 if (error) return authMsg(error.message);
                 await sb.auth.signOut();
                 setMode('login');
-                authMsg('ההרשמה נקלטה! שלחנו אליך מייל, יש ללחוץ על הקישור בו כדי לאשר את הכתובת.', true);
+                authMsg('ההרשמה נקלטה! שלחנו אליך מייל, יש ללחוץ על הקישור בו כדי לאשר את הכתובת. לאחר מכן ניתן להיכנס, והגישה תופעל כשמנהל המערכת יאשר אותך', true);
             }
         }
         async function logout() {
             if (channel) { sb.removeChannel(channel); channel = null; }
             await sb.auth.signOut();
-            me = null; calls = []; users = []; sitesList = [];
+            me = null; calls = []; users = [];
             $('appContainer').classList.add('hidden');
-            $('authScreen').classList.remove('hidden');$('pendingBox').classList.add('hidden');
-            $('authForm').classList.remove('hidden');$('authPass').value = '';
+            $('authScreen').classList.remove('hidden');
+            $('pendingBox').classList.add('hidden');
+            $('authForm').classList.remove('hidden');
+            $('authPass').value = '';
             setMode('login');
         }
         async function boot() {
-            if (!sb) return;
+            if (!sb) return authMsg(CONFIG_ERR);
             const { data: { session } } = await sb.auth.getSession();
-            if (!session) {
-                $('authScreen').classList.remove('hidden');
-                $('authForm').classList.remove('hidden');$('pendingBox').classList.add('hidden');
-                return;
-            }
+            if (!session) return;
             const { data: p } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
             if (!p) { await logout(); return authMsg('המשתמש לא נמצא'); }
             me = p;
             if (!p.approved) {
-                $('authScreen').classList.remove('hidden');
-                $('authForm').classList.add('hidden');$('pendingBox').classList.remove('hidden');
+                $('authForm').classList.add('hidden');
+                $('pendingBox').classList.remove('hidden');
                 return;
             }
             $('authScreen').classList.add('hidden');
-            $('appContainer').classList.remove('hidden');$('userInfoDisplay').innerText = `${me.username} (${ROLE[me.role]})`;
+            $('appContainer').classList.remove('hidden');
+            $('userInfoDisplay').innerText = `${me.username} (${ROLE[me.role]})`;
             $('tabBoardLabel').innerText = isAdmin() ? 'לוח קריאות (לפי ימים)' : 'הקריאות שלי';
             $('tabUsers').classList.toggle('hidden', !isAdmin());
-            if (isAdmin()) $('tabUsers').classList.add('flex');$('newCallBtn').classList.toggle('hidden', !isAdmin());
+            if (isAdmin()) $('tabUsers').classList.add('flex');
+            $('newCallBtn').classList.toggle('hidden', !isAdmin());
             if (isAdmin()) $('newCallBtn').classList.add('flex');
-            await loadSites();
             await loadUsers();
             await loadCalls();
             channel = sb.channel('calls-live').on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, loadCalls).subscribe();
             switchTab('board');
         }
 
-        async function loadSites() {
-            const { data, error } = await sb.from('sites').select('*').order('site_name');
-            if (error) { console.error('שגיאה בטעינת אתרים:', error); return; }
-            sitesList = data || [];
-        }
-
-        function showSitesDropdown() {
-            filterSitesDropdown();
-            $('sitesCustomDropdown').classList.remove('hidden');
-        }
-
-        function hideSitesDropdown() {
-            setTimeout(() => {
-                $('sitesCustomDropdown').classList.add('hidden');
-            }, 200);
-        }
-
-        function filterSitesDropdown() {
-            const val = ($('newSiteName').value || '').trim().toLowerCase();
-            const dropdown = $('sitesCustomDropdown');
-            const filtered = sitesList.filter(s => s.site_name.toLowerCase().includes(val));
-
-            if (!filtered.length) {
-                dropdown.innerHTML = `<div class="p-2.5 text-gray-400 italic">לא נמצאו אתרים תואמים</div>`;
-                return;
-            }
-
-            dropdown.innerHTML = filtered.map(s => `
-                <div onclick="selectSite('${esc(s.site_name)}', '${esc(s.region || '')}')" class="p-2.5 hover:bg-blue-50 cursor-pointer border-b border-gray-100 flex justify-between items-center transition">
-                    <span class="font-bold text-slate-800">${esc(s.site_name)}</span>
-                    <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">${esc(s.region || '')}</span>
-                </div>
-            `).join('');
-        }
-
-        function selectSite(siteName, region) {
-            $('newSiteName').value = siteName;
-            $('newRegion').value = region;
-            $('sitesCustomDropdown').classList.add('hidden');
-        }
-
+        /* ---------- Data ---------- */
         async function loadUsers() {
             if (isAdmin()) {
                 const { data } = await sb.from('profiles').select('*').order('created_at');
@@ -413,17 +377,19 @@
             const { data, error } = await sb.from('calls').select('*').order('call_date').order('id', { ascending: false });
             if (error) { console.error(error); return; }
             calls = data || [];
-            $('regionList').innerHTML = [...new Set(calls.map(c => (c.region || '').trim()).concat(sitesList.map(s => (s.region || '').trim())).filter(Boolean))].map(r => `<option value="${esc(r)}">`).join('');
+            $('regionList').innerHTML = [...new Set(calls.map(c => (c.region || '').trim()).filter(Boolean))].map(r => `<option value="${esc(r)}">`).join('');
             renderCalls();
         }
         const techName = id => (users.find(u => u.id === id) || {}).username || 'לא שויך';
 
+        /* ---------- Tabs / filters ---------- */
         function switchTab(tab) {
             const on = "py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-blue-500 text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap";
             const off = "py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap";
             $('tabBoard').className = tab === 'board' ? on : off;
             $('tabUsers').className = (tab === 'users' ? on : off) + (isAdmin() ? '' : ' hidden');
-            $('viewBoard').classList.toggle('hidden', tab !== 'board');$('viewUsers').classList.toggle('hidden', tab !== 'users');
+            $('viewBoard').classList.toggle('hidden', tab !== 'board');
+            $('viewUsers').classList.toggle('hidden', tab !== 'users');
             if (tab === 'board') renderCalls();
             if (tab === 'users') loadUsers().then(renderUsers);
         }
@@ -436,6 +402,7 @@
             renderCalls();
         }
 
+        /* ---------- Calls board ---------- */
         function formatDateHebrew(dateStr) {
             const today = new Date().toISOString().split('T')[0];
             if (dateStr === today) return `היום (${dateStr})`;
@@ -505,13 +472,206 @@
             }).join('');
         }
 
+        /* ---------- New call (admin) ---------- */
         function openNewCallModal() {
             const techs = users.filter(u => u.approved && u.role === 'user');
             if (!techs.length) return alert('אין עדיין משתמשים רגילים מאושרים לשיוך קריאה. אשר משתמש בלשונית ניהול משתמשים.');
-            $('newSiteName').value = ''; $('newProblemDesc').value = '';$('newRegion').value = '';
-            $('newCallDate').value = new Date().toISOString().split('T')[0];$('newTechnicianSelect').innerHTML = techs.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
+            $('newSiteName').value = ''; $('newProblemDesc').value = '';
+            $('newCallDate').value = new Date().toISOString().split('T')[0];
+            $('newTechnicianSelect').innerHTML = techs.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
             $('newCallModal').classList.remove('hidden');
         }
         function closeModal(id) { $(id).classList.add('hidden'); }
         async function saveNewCall() {
-            const siteName
+            const row = {
+                site_name: $('newSiteName').value.trim(), problem: $('newProblemDesc').value.trim(),
+                call_date: $('newCallDate').value, assigned_to: $('newTechnicianSelect').value,
+                priority: $('newPriority').value, status: 'חדשה', created_by: me.id, region: $('newRegion').value.trim()
+            };
+            if (!row.site_name || !row.problem || !row.call_date) return alert('נא למלא את כל שדות החובה.');
+            const { error } = await sb.from('calls').insert(row);
+            if (error) return alert('שגיאה בשמירה: ' + error.message);
+            closeModal('newCallModal');
+            loadCalls();
+        }
+
+        /* ---------- Update / close call ---------- */
+        function openCloseModal(id) {
+            activeCall = calls.find(c => c.id === id);
+            if (!activeCall) return;
+            $('solutionDesc').value = activeCall.solution || '';
+            $('replacedParts').value = activeCall.parts || '';
+            $('workHours').value = activeCall.hours || 1;
+            $('finalStatus').value = activeCall.status === 'חדשה' ? 'הושלמה' : activeCall.status;
+            $('closeSiteOk').value = activeCall.site_ok === true ? 'ok' : activeCall.site_ok === false ? 'bad' : '';
+            $('closeRegion').value = activeCall.region || '';
+            $('closeCheck').checked = !!activeCall.opened_in_check;
+            $('closeNotes').value = activeCall.notes || '';
+            $('closeCallModal').classList.remove('hidden');
+        }
+        async function saveCompletedCall() {
+            if (!activeCall) return;
+            const { error } = await sb.from('calls').update({
+                solution: $('solutionDesc').value, parts: $('replacedParts').value,
+                hours: parseFloat($('workHours').value) || 0, status: $('finalStatus').value,
+                site_ok: $('closeSiteOk').value === 'ok' ? true : $('closeSiteOk').value === 'bad' ? false : null,
+                region: $('closeRegion').value.trim(), opened_in_check: $('closeCheck').checked,
+                notes: $('closeNotes').value.trim()
+            }).eq('id', activeCall.id);
+            if (error) return alert('שגיאה בעדכון: ' + error.message);
+            closeModal('closeCallModal');
+            loadCalls();
+        }
+        function sendWhatsAppSummary() {
+            if (!activeCall) return;
+            const text = `*סיכום קריאת שירות #C-${activeCall.id}*
+🏢 *אתר:* ${activeCall.site_name}
+👨‍🔧 *טכנאי אחראי:* ${techName(activeCall.assigned_to)}
+⚠️ *תקלה:* ${activeCall.problem}
+🔧 *פתרון:* ${$('solutionDesc').value || 'טרם הוזן'}
+⚙️ *חלקים שהוחלפו:* ${$('replacedParts').value || 'ללא'}
+⏱️ *שעות עבודה:* ${$('workHours').value}
+📌 *סטטוס:* ${$('finalStatus').value}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+        }
+        async function deleteCall(id) {
+            if (!confirm('למחוק קריאה זו?')) return;
+            const { error } = await sb.from('calls').delete().eq('id', id);
+            if (error) return alert('שגיאה במחיקה: ' + error.message);
+            loadCalls();
+        }
+
+        /* ---------- Users management (admin) ---------- */
+        function renderUsers() {
+            const sorted = [...users].sort((a, b) => a.approved - b.approved);
+            $('usersCardsContainer').innerHTML = sorted.map(u => {
+                const self = u.id === me.id;
+                const status = u.approved
+                    ? '<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">מאושר</span>'
+                    : '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">ממתין לאישור</span>';
+                return `
+                <div class="bg-slate-50 p-4 rounded-xl border ${u.approved ? 'border-gray-200' : 'border-amber-300'} space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <div class="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm">${esc(u.username.charAt(0).toUpperCase())}</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">${esc(u.username)}${self ? ' (אני)' : ''}</h4>
+                                <p class="text-xs text-gray-500">ביקש: ${ROLE[u.requested_role]}</p>
+                            </div>
+                        </div>
+                        ${status}
+                    </div>
+                    ${self ? '' : `
+                    <div class="flex gap-2">
+                        <select id="role_${u.id}" class="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white text-gray-800">
+                            <option value="user" ${u.role === 'user' ? 'selected' : ''}>משתמש רגיל</option>
+                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>מנהל מערכת</option>
+                        </select>
+                        <button type="button" onclick="setApproval('${u.id}', true)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">${u.approved ? 'עדכן הרשאה' : 'אשר'}</button>
+                        ${u.approved ? `<button type="button" onclick="setApproval('${u.id}', false)" class="bg-red-50 hover:bg-red-600 hover:text-white text-red-600 px-3 py-1.5 rounded-lg text-xs font-medium transition">חסום</button>` : ''}
+                        <button type="button" onclick="deleteUser('${u.id}')" title="מחק משתמש" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>`}
+                </div>`;
+            }).join('');
+        }
+        async function setApproval(id, approved) {
+            const patch = { approved };
+            if (approved) patch.role = $('role_' + id).value;
+            const { error } = await sb.from('profiles').update(patch).eq('id', id);
+            if (error) return alert('שגיאה: ' + error.message);
+            await loadUsers(); renderUsers();
+        }
+
+        const localToday = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        function buildDailySummary(date, day) {
+            const [y, m, d] = date.split('-');
+            const mark = v => v ? '✔️' : '✖️';
+            let t = `*סיכום יום סבב תקלות - ית"ד*\n*${+d}.${+m}.${y.slice(2)}*\n*מוביל יום:* ${$('dailyLeader').value.trim()}\n*סל מנוף:* ${mark($('dailyCrane').checked)}`;
+            const groups = new Map();
+            day.forEach(c => {
+                const k = (c.region || '').trim();
+                if (!groups.has(k)) groups.set(k, []);
+                groups.get(k).push(c);
+            });
+            groups.forEach((list, region) => {
+                if (region) t += `\n\n*${region}*`;
+                list.forEach(c => {
+                    const lines = (c.solution || '').split('\n').map(l => l.trim()).filter(Boolean);
+                    const treat = lines.length > 1 ? lines.map(l => '• ' + l).join('\n') : lines.join('\n');
+                    t += `\n\n*${c.site_name}*\n*תקלה:* ${c.problem}\n*נפתח בצ'ק:* ${mark(c.opened_in_check)}\n*טיפול:*`;
+                    if (treat) t += '\n' + treat;
+                    t += '\n*הערות:*';
+                    if (c.notes && c.notes.trim()) t += '\n' + c.notes.trim();
+                    if (c.site_ok === true) t += '\n*אתר תקין*🟢';
+                    if (c.site_ok === false) t += '\n*אתר לא תקין*🔴';
+                });
+            });
+            return t;
+        }
+        function openDailyModal() {
+            $('dailyDate').value = localToday();
+            if (!$('dailyLeader').value) $('dailyLeader').value = me.username;
+            renderDailyList();
+            $('dailyModal').classList.remove('hidden');
+        }
+        function dailyCandidates() {
+            const date = $('dailyDate').value, onlyHandled = $('dailyOnlyHandled').checked;
+            return calls.filter(c => c.call_date === date && (!onlyHandled || c.status !== 'חדשה'));
+        }
+        function renderDailyList() {
+            const list = dailyCandidates();
+            $('dailyList').innerHTML = list.length
+                ? list.map(c => `<label class="flex items-center gap-2 text-xs py-1.5 px-2 rounded hover:bg-slate-100 cursor-pointer">
+                        <input type="checkbox" class="dailyChk" value="${c.id}" checked onchange="refreshDailyText()">
+                        <span class="font-bold">${esc(c.site_name)}</span><span class="text-gray-400">(${esc(c.status)})</span></label>`).join('')
+                : '<div class="text-xs text-gray-400 py-2 px-2">אין קריאות מתאימות בתאריך זה</div>';
+            refreshDailyText();
+        }
+        function selectedDailyCalls() {
+            const ids = [...document.querySelectorAll('.dailyChk:checked')].map(i => Number(i.value));
+            return calls.filter(c => ids.includes(c.id));
+        }
+        function refreshDailyText() {
+            const day = selectedDailyCalls();
+            $('dailyText').value = day.length ? buildDailySummary($('dailyDate').value, day) : 'לא נבחרו קריאות לסיכום';
+        }
+        function sendDailyWhatsApp() {
+            const text = $('dailyText').value.trim();
+            if (!selectedDailyCalls().length || !text) return alert('לא נבחרו קריאות לשליחה.');
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+        }
+        function deleteErr(error) {
+            return /last admin/i.test(error.message)
+                ? 'לא ניתן למחוק את המנהל האחרון במערכת. מנה קודם מנהל נוסף.'
+                : 'שגיאה במחיקה: ' + error.message;
+        }
+        async function deleteMyAccount() {
+            if (!confirm('למחוק את החשבון שלך לצמיתות? לא ניתן לשחזר פעולה זו.')) return;
+            const { error } = await sb.rpc('delete_user', { target: me.id });
+            if (error) return alert(deleteErr(error));
+            await logout();
+            authMsg('החשבון נמחק', true);
+        }
+        async function deleteUser(id) {
+            const u = users.find(x => x.id === id);
+            if (!u || !confirm(`למחוק את המשתמש "${u.username}" לצמיתות? קריאות ששויכו אליו יישארו ללא שיוך.`)) return;
+            const { error } = await sb.rpc('delete_user', { target: id });
+            if (error) return alert(deleteErr(error));
+            await loadUsers(); renderUsers(); await loadCalls();
+        }
+        function toast(t) {
+            $('toastText').textContent = t;
+            $('toast').classList.remove('hidden');
+            setTimeout(() => $('toast').classList.add('hidden'), 7000);
+        }
+        // חזרה מקישור האימות במייל
+        const justConfirmed = /type=(signup|email)/.test(location.hash);
+        const linkFailed = /error_code=|error=/.test(location.hash);
+        boot().then(() => {
+            if (justConfirmed) toast('האימייל אושר בהצלחה');
+            if (linkFailed) authMsg('הקישור במייל פג תוקף או כבר נוצל. נסה להתחבר, או הירשם מחדש');
+            if (justConfirmed || linkFailed) history.replaceState(null, '', location.pathname);
+        });
+    </script>
+</body>
+</html>

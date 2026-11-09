@@ -27,6 +27,7 @@
                 <p id="authSub" class="text-sm text-gray-500 mt-1">התחבר למערכת עם פרטי המשתמש שלך</p>
             </div>
 
+            <!-- טופס התחברות / הרשמה -->
             <form id="authForm" onsubmit="submitAuth(event)" class="space-y-4">
                 <div id="regFields" class="space-y-4 hidden">
                     <div>
@@ -35,4 +36,74 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">סוג משתמש מבוקש</label>
-                        <select id="regRole" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none
+                        <select id="regRole" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                            <option value="user">משתמש רגיל (טכנאי)</option>
+                            <option value="admin">מנהל מערכת</option>
+                        </select>
+                        <p class="text-[11px] text-gray-400 mt-1">החשבון יופעל רק לאחר אישור מנהל המערכת</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
+                    <input type="email" id="authEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right bg-white text-gray-800" dir="ltr">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
+                    <input type="password" id="authPass" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right bg-white text-gray-800" dir="ltr">
+                </div>
+                <div id="authMsg" class="text-sm text-center hidden font-bold"></div>
+                <button type="submit" id="authBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-md">כניסה למערכת</button>
+                <button type="button" id="toggleMode" onclick="setMode(mode==='login'?'register':'login')" class="w-full text-sm text-blue-600 hover:underline">אין לך משתמש? הירשם</button>
+            </form>
+
+            <!-- תיבת המתנה לאישור מנהל -->
+            <div id="pendingBox" class="hidden text-center space-y-4">
+                <div class="bg-amber-100 text-amber-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-hourglass-half"></i></div>
+                <h2 class="font-bold text-lg text-slate-900">החשבון ממתין לאישור מנהל</h2>
+                <p class="text-sm text-gray-500">מנהל המערכת צריך לאשר את המשתמש שלך לפני הכניסה. נסה שוב מאוחר יותר.</p>
+                <div class="flex gap-2">
+                    <button type="button" onclick="boot()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium">בדוק שוב</button>
+                    <button type="button" onclick="logout()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium">התנתק</button>
+                </div>
+                <button type="button" onclick="deleteMyAccount()" class="text-xs text-red-500 hover:underline">מחיקת החשבון שלי</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" class="flex-1 flex flex-col hidden">
+        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-3 md:py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="bg-blue-600 p-2 rounded-lg text-white"><i class="fa-solid fa-tools text-lg md:text-xl"></i></div>
+                    <div>
+                        <h1 class="text-lg md:text-xl font-bold leading-tight">ניהול קריאות שירות</h1>
+                        <p class="text-xs text-slate-400" id="userInfoDisplay"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                <button type="button" onclick="deleteMyAccount()" title="מחק את החשבון שלי" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm transition duration-200 flex items-center space-x-2 space-x-reverse">
+                    <i class="fa-solid fa-user-xmark"></i><span class="hidden sm:inline">מחק חשבון</span>
+                </button>
+                <button type="button" onclick="logout()" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm transition duration-200 flex items-center space-x-2 space-x-reverse">
+                    <i class="fa-solid fa-right-from-bracket"></i><span class="hidden sm:inline">התנתק</span>
+                </button>
+                </div>
+            </div>
+            <div class="bg-slate-800 border-t border-slate-700">
+                <div class="max-w-7xl mx-auto px-2 md:px-4 flex space-x-2 md:space-x-4 space-x-reverse overflow-x-auto">
+                    <button type="button" onclick="switchTab('board')" id="tabBoard" class="py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-blue-500 text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap">
+                        <i class="fa-solid fa-clipboard-list"></i><span id="tabBoardLabel">לוח קריאות</span>
+                    </button>
+                    <button type="button" onclick="switchTab('users')" id="tabUsers" class="py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-xs md:text-sm hidden items-center space-x-2 space-x-reverse whitespace-nowrap">
+                        <i class="fa-solid fa-users-gear"></i><span>ניהול ואישור משתמשים</span><span id="pendingBadge" class="hidden bg-red-500 text-white rounded-full px-1.5 text-[10px]"></span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+            <!-- Board -->
+            <div id="viewBoard" class="space-y-4 md:space-y-6">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button type

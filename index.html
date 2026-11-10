@@ -192,6 +192,7 @@
                             <input type="text" id="sitesNewRegion" placeholder="חטיבה *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
                             <input type="text" id="sitesNewProvider" placeholder="שטח" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
                             <input type="number" id="sitesNewCams" placeholder="מצלמות" min="0" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
+                            <input type="text" id="sitesNewCoords" placeholder="נ.צ. (קו רוחב, קו אורך)" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
                             <button type="button" onclick="addSiteManual()" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-xs font-medium shadow transition">הוסף</button>
                         </div>
                     </div>
@@ -261,6 +262,9 @@
                         <input type="text" id="newSiteName" list="siteList" oninput="onSiteInput()" autocomplete="off" placeholder="התחל להקליד כדי לבחור מהרשימה" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                         <datalist id="siteList"></datalist>
                         <p id="siteHint"></p>
+                        <a id="newSiteWazeLink" href="#" target="_blank" rel="noopener noreferrer" class="hidden mt-2 inline-flex items-center gap-2 rounded-lg bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100">
+                            <i class="fa-solid fa-location-arrow"></i><span>נווט לאתר באמצעות Waze</span>
+                        </a>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">שייך למשתמש (טכנאי) *</label>
@@ -339,7 +343,7 @@
             </div>
             <div class="space-y-3 md:space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">טיפול שבוצע (כל שורה תופיע כנקודה בסיכום) *</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">תיאור מפורט של ביצוע הטיפול (כל שורה תופיע כנקודה בסיכום) *</label>
                     <textarea id="solutionDesc" rows="3" placeholder="פרט את הפעולות שבוצעו באתר..." class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></textarea>
                 </div>
                 <div>
@@ -373,14 +377,20 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div><label class="block text-xs font-medium text-gray-700 mb-1">כתובת IP</label>
                         <input type="text" id="closeIp" dir="ltr" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></div>
-                    <div><label class="block text-xs font-medium text-gray-700 mb-1">רכב / אמצעי</label>
-                        <input type="text" id="closeVehicle" list="vehicleList" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                        <datalist id="vehicleList"><option value="ללא"></option><option value="סל מנוף"></option><option value="קנגו"></option></datalist></div>
+                    <div class="flex items-center pt-5">
+                        <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeCrane"> נעשה שימוש בסל מנוף</label>
+                    </div>
                     <div><label class="block text-xs font-medium text-gray-700 mb-1">גורם מטפל</label>
                         <input type="text" id="closeHandler" list="handlerList" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                         <datalist id="handlerList"><option value="צוות ית&quot;ד - דרג ג'"></option><option value="דסק ית&quot;ד - דרג ב'"></option></datalist></div>
                 </div>
-                <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeCheck"> נפתח בצ'ק</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3">
+                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeCheck"> נפתח בצ'ק</label>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closePowerLift"> הרמת חשמל</label>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeLocalReboot"> ריסוט/ריבוט מקומי</label>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeRemoteReboot"> ריבוט מרחוק</label>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeSimReplace"> החלפת סים</label>
+                </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">הערות</label>
                     <textarea id="closeNotes" rows="2" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></textarea>
@@ -515,11 +525,12 @@
             { key: 'handler',   label: 'גורם מטפל',      w: 22, on: true,  get: r => r["גורם מטפל"] || '' },
             { key: 'fault',     label: 'תאור התקלה',     w: 28, on: true,  get: r => r["תאור התקלה"] || '' },
             { key: 'status',    label: 'סטטוס',          w: 10, on: true,  get: r => r["סטטוס"] || '' },
-            { key: 'treatment', label: 'טיפול/הערות',    w: 36, on: false, get: r => r["טיפול/הערות"] || '' },
-            { key: 'parts',     label: 'החלפת רכיבים',   w: 18, on: false, get: r => r["החלפת רכיבים"] || '' },
-            { key: 'elec',      label: 'הרמת חשמל',      w: 10, on: false, get: r => r["הרמת חשמל"] || '' },
-            { key: 'rebootR',   label: 'ריבוט מרחוק',    w: 12, on: false, get: r => r["ריבוט מרחוק"] || '' },
-            { key: 'rebootL',   label: 'ריבוט/ריסוט מקומי', w: 14, on: false, get: r => r["ריבוט/ריסוט מקומי"] || '' },
+            { key: 'treatment', label: 'טיפול/הערות',    w: 36, on: true, get: r => r["טיפול/הערות"] || '' },
+            { key: 'parts',     label: 'החלפת רכיבים',   w: 18, on: true, get: r => r["החלפת רכיבים"] || '' },
+            { key: 'elec',      label: 'הרמת חשמל',      w: 10, on: true, get: r => r["הרמת חשמל"] || '' },
+            { key: 'rebootR',   label: 'ריבוט מרחוק',    w: 12, on: true, get: r => r["ריבוט מרחוק"] || '' },
+            { key: 'rebootL',   label: 'ריבוט/ריסוט מקומי', w: 14, on: true, get: r => r["ריבוט/ריסוט מקומי"] || '' },
+            { key: 'sim',       label: 'החלפת סים',      w: 10, on: true, get: r => r["החלפת סים"] || '' },
             { key: 'closed',    label: 'נסגר בתאריך',    w: 13, on: false, get: r => (r.closed_at || r.created_at || '').slice(0, 10) }
         ];
         const defaultLogCols = () => LOG_COLUMNS.filter(c => c.on).map(c => c.key);
@@ -695,10 +706,11 @@
                 'שם האתר': site_name,
                 'חטיבה': region,
                 'שטח': provider,
-                "מס' מצלמות": camera_count
+                "מס' מצלמות": camera_count,
+                "נ.צ": $('sitesNewCoords').value.trim() || null
             });
             if (error) return alert('שגיאה: ' + error.message);
-            ['sitesNewId', 'sitesNewName', 'sitesNewRegion', 'sitesNewProvider', 'sitesNewCams'].forEach(i => $(i).value = '');
+            ['sitesNewId', 'sitesNewName', 'sitesNewRegion', 'sitesNewProvider', 'sitesNewCams', 'sitesNewCoords'].forEach(i => $(i).value = '');
             await loadSites(); renderSites();
         }
         async function deleteSite(id) {
@@ -708,13 +720,36 @@
             if (error) return alert(error.code === '23503' ? 'לא ניתן למחוק אתר שיש עליו קריאות או רישומים ביומן המבצעים.' : 'שגיאה: ' + error.message);
             await loadSites(); renderSites();
         }
+        function getWazeUrlFromCoordinates(rawCoordinates) {
+            if (!rawCoordinates) return null;
+            // Supports decimal coordinates such as "31.12345, 34.12345" or "31.12345 34.12345".
+            // Israeli grid / UTM coordinates are not valid Waze lat-long values and are rejected.
+            const numbers = String(rawCoordinates).trim().match(/[-+]?\d+(?:\.\d+)?/g);
+            if (!numbers || numbers.length !== 2) return null;
+            const lat = Number(numbers[0]);
+            const lon = Number(numbers[1]);
+            if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+            return `https://waze.com/ul?ll=${encodeURIComponent(lat + ',' + lon)}&navigate=yes`;
+        }
         function onSiteInput() {
             const v = $('newSiteName').value.trim(), hint = $('siteHint');
             const s = sites.find(x => x["שם האתר"] === v);
+            const wazeLink = $('newSiteWazeLink');
+            wazeLink.classList.add('hidden');
+            wazeLink.removeAttribute('href');
             if (s) {
                 if (s["חטיבה"]) $('newRegion').value = s["חטיבה"];
                 hint.textContent = `נמצא במאגר${s["שטח"] ? ' · שטח: ' + s["שטח"] : ''}${s["מס' מצלמות"] ? ' · ' + s["מס' מצלמות"] + ' מצלמות' : ''}`;
                 hint.className = 'text-[11px] text-emerald-600 mt-1';
+                const url = getWazeUrlFromCoordinates(s["נ.צ"]);
+                if (url) {
+                    wazeLink.href = url;
+                    wazeLink.classList.remove('hidden');
+                } else if (s["נ.צ"]) {
+                    hint.textContent += ' · הנ.צ קיים אך אינו בפורמט קואורדינטות עשרוניות (קו רוחב, קו אורך), ולכן לא נוצר קישור Waze';
+                } else {
+                    hint.textContent += ' · לא הוזן נ.צ לאתר';
+                }
             } else {
                 hint.textContent = v ? 'האתר לא במאגר. יש לבחור אתר מהרשימה' : '';
                 hint.className = 'text-[11px] text-amber-600 mt-1';
@@ -823,6 +858,7 @@
             const techs = users.filter(u => u.approved && u.role === 'user');
             if (!techs.length) return alert('אין עדיין משתמשים רגילים מאושרים לשיוך קריאה. אשר משתמש בלשונית ניהול משתמשים.');
             $('newSiteName').value = ''; $('newProblemDesc').value = ''; $('siteHint').textContent = '';
+            $('newSiteWazeLink').classList.add('hidden'); $('newSiteWazeLink').removeAttribute('href');
             $('newCallDate').value = new Date().toISOString().split('T')[0];
             $('newTechnicianSelect').innerHTML = techs.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
             $('newCallModal').classList.remove('hidden');
@@ -852,7 +888,11 @@
             $('finalStatus').value = activeCall.status === 'חדשה' ? 'הושלמה' : activeCall.status;
             $('closeSiteOk').value = activeCall.site_ok === false ? 'bad' : 'ok';
             $('closeIp').value = activeCall.ip_address || '';
-            $('closeVehicle').value = activeCall.vehicle_type || 'ללא';
+            $('closeCrane').checked = !!activeCall.crane_used;
+            $('closePowerLift').checked = !!activeCall.power_lift;
+            $('closeLocalReboot').checked = !!activeCall.local_reboot;
+            $('closeRemoteReboot').checked = !!activeCall.remote_reboot;
+            $('closeSimReplace').checked = !!activeCall.sim_replaced;
             $('closeHandler').value = activeCall.handler || "צוות ית\"ד - דרג ג'";
             $('closeRegion').value = activeCall.region || '';
             $('closeCheck').checked = !!activeCall.opened_in_check;
@@ -867,7 +907,12 @@
                 site_ok: $('closeSiteOk').value === 'ok' ? true : $('closeSiteOk').value === 'bad' ? false : null,
                 region: $('closeRegion').value.trim(), opened_in_check: $('closeCheck').checked,
                 notes: $('closeNotes').value.trim(),
-                ip_address: $('closeIp').value.trim(), vehicle_type: $('closeVehicle').value.trim() || 'ללא',
+                ip_address: $('closeIp').value.trim(),
+                crane_used: $('closeCrane').checked,
+                power_lift: $('closePowerLift').checked,
+                local_reboot: $('closeLocalReboot').checked,
+                remote_reboot: $('closeRemoteReboot').checked,
+                sim_replaced: $('closeSimReplace').checked,
                 handler: $('closeHandler').value.trim()
             }).eq('id', activeCall.id);
             if (error) return alert('שגיאה בעדכון: ' + error.message);

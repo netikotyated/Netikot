@@ -828,9 +828,11 @@
                                 <h4 class="font-bold text-slate-900 text-base">${esc(c.site_name)}</h4>
                                 <p class="text-xs text-blue-600 font-medium">טכנאי אחראי: ${esc(techName(c.assigned_to))}</p>
                                 ${(() => {
-                                    const site = sites.find(x => x["שם האתר"] === c.site_name);
+                                    const site = sites.find(x => String(x["שם האתר"] || '').trim() === String(c.site_name || '').trim());
                                     const wazeUrl = site ? getWazeUrlFromCoordinates(site["נ.צ"]) : null;
-                                    return wazeUrl ? `<a href="${wazeUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-location-arrow"></i><span>ניווט לאתר ב-Waze</span></a>` : `<span class="inline-flex items-center gap-1 mt-2 text-[11px] text-gray-400"><i class="fa-solid fa-location-dot"></i> אין קואורדינטות ניווט לאתר</span>`;
+                                    return wazeUrl
+                                        ? `<a href="${wazeUrl}" target="_blank" rel="noopener noreferrer" aria-label="נווט לאתר ${esc(c.site_name)} באמצעות Waze" class="inline-flex items-center gap-2 mt-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 px-3 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-brands fa-waze text-base"></i><span>נווט ב-Waze</span></a>`
+                                        : `<span class="inline-flex items-center gap-1 mt-2 text-[11px] text-gray-400"><i class="fa-solid fa-location-dot"></i> ${site ? 'לא הוגדר נ.צ תקין לאתר' : 'האתר לא נמצא במאגר האתרים'}</span>`;
                                 })()}
                             </div>
                             <div class="bg-slate-50 p-2.5 rounded-lg border border-gray-100 text-xs text-slate-700">

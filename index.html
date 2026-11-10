@@ -153,18 +153,17 @@
                             <select id="logMonth" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
                                 <option value="">הכל</option><option value="1">ינואר</option><option value="2">פברואר</option><option value="3">מרץ</option><option value="4">אפריל</option><option value="5">מאי</option><option value="6">יוני</option><option value="7">יולי</option><option value="8">אוגוסט</option><option value="9">ספטמבר</option><option value="10">אוקטובר</option><option value="11">נובמבר</option><option value="12">דצמבר</option>
                             </select></div>
-                        <div><label class="block text-[11px] text-gray-500 mb-1">חטמ"ר / אזור</label><select id="logRegion" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></select></div>
-                        <div><label class="block text-[11px] text-gray-500 mb-1">ספק</label><select id="logProvider" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></select></div>
-                        <div><label class="block text-[11px] text-gray-500 mb-1">מצב האתר</label>
+                        <div><label class="block text-[11px] text-gray-500 mb-1">חטיבה</label><select id="logRegion" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></select></div>
+                        <div><label class="block text-[11px] text-gray-500 mb-1">שטח</label><select id="logProvider" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></select></div>
+                        <div><label class="block text-[11px] text-gray-500 mb-1">סטטוס</label>
                             <select id="logStatus" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"><option value="">הכל</option><option value="תקין">תקין</option><option value="לא תקין">לא תקין</option></select></div>
                         <div class="col-span-2 md:col-span-1"><label class="block text-[11px] text-gray-500 mb-1">חיפוש</label><input type="text" id="logSearch" oninput="renderLog()" placeholder="אתר, תקלה, טיפול..." class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></div>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div class="bg-white p-3 rounded-xl border border-gray-200 flex items-center space-x-3 space-x-reverse"><div class="bg-blue-100 text-blue-600 p-2.5 rounded-lg"><i class="fa-solid fa-list-check"></i></div><div><p class="text-[10px] text-gray-500">סה"כ אירועים</p><h3 id="logTotal" class="text-lg font-bold text-slate-800">0</h3></div></div>
                         <div class="bg-white p-3 rounded-xl border border-gray-200 flex items-center space-x-3 space-x-reverse"><div class="bg-emerald-100 text-emerald-600 p-2.5 rounded-lg"><i class="fa-solid fa-circle-check"></i></div><div><p class="text-[10px] text-gray-500">אתר תקין</p><h3 id="logOk" class="text-lg font-bold text-slate-800">0</h3></div></div>
                         <div class="bg-white p-3 rounded-xl border border-gray-200 flex items-center space-x-3 space-x-reverse"><div class="bg-red-100 text-red-600 p-2.5 rounded-lg"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-[10px] text-gray-500">אתר לא תקין</p><h3 id="logBad" class="text-lg font-bold text-slate-800">0</h3></div></div>
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 flex items-center space-x-3 space-x-reverse"><div class="bg-purple-100 text-purple-600 p-2.5 rounded-lg"><i class="fa-solid fa-clock"></i></div><div><p class="text-[10px] text-gray-500">שעות עבודה</p><h3 id="logHours" class="text-lg font-bold text-slate-800">0</h3></div></div>
                     </div>
 
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
@@ -181,18 +180,19 @@
                 <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
                     <div>
                         <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">מאגר אתרים</h2>
-                        <p class="text-xs md:text-sm text-gray-500">רשימת האתרים מבסיס הנתונים. בפתיחת קריאה בוחרים אתר מהרשימה והחטמ"ר נטען אוטומטית</p>
+                        <p class="text-xs md:text-sm text-gray-500">רשימת האתרים מבסיס הנתונים. בפתיחת קריאה בוחרים אתר מהרשימה והחטיבה נטענת אוטומטית</p>
                     </div>
                     <div id="sitesMsg" class="text-xs font-bold hidden"></div>
 
                     <div class="bg-slate-50 p-3 rounded-xl border border-gray-200 space-y-2">
                         <label class="block text-xs font-bold text-slate-700">הוספת אתר חדש</label>
-                        <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
-                            <input type="text" id="sitesNewName" placeholder="שם אתר *" class="col-span-2 md:col-span-1 border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <input type="text" id="sitesNewRegion" placeholder="חטמ&quot;ר *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <input type="text" id="sitesNewProvider" placeholder="ספק" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
+                        <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+                            <input type="number" id="sitesNewId" placeholder="מס''ד (מזהה) *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
+                            <input type="text" id="sitesNewName" placeholder="שם אתר *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
+                            <input type="text" id="sitesNewRegion" placeholder="חטיבה *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
+                            <input type="text" id="sitesNewProvider" placeholder="שטח" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
                             <input type="number" id="sitesNewCams" placeholder="מצלמות" min="0" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <button type="button" onclick="addSiteManual()" class="col-span-2 md:col-span-1 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-xs font-medium shadow transition">הוסף</button>
+                            <button type="button" onclick="addSiteManual()" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-xs font-medium shadow transition">הוסף</button>
                         </div>
                     </div>
 
@@ -200,13 +200,13 @@
                         <span id="sitesCount" class="text-xs font-bold text-slate-700"></span>
                         <div class="relative sm:w-64">
                             <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 text-sm"></i>
-                            <input type="text" id="sitesSearch" oninput="renderSites()" placeholder="חיפוש אתר, חטמ&quot;ר או ספק..." class="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                            <input type="text" id="sitesSearch" oninput="renderSites()" placeholder="חיפוש אתר, חטיבה או שטח..." class="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                         </div>
                     </div>
 
                     <div class="overflow-auto border border-gray-200 rounded-lg max-h-96">
                         <table class="w-full text-xs text-right">
-                            <thead class="bg-slate-100 text-slate-600 sticky top-0"><tr><th class="p-2.5 font-semibold">מס' אתר</th><th class="p-2.5 font-semibold">שם אתר</th><th class="p-2.5 font-semibold">חטמ"ר / אזור</th><th class="p-2.5 font-semibold">ספק</th><th class="p-2.5 font-semibold">מצלמות</th><th class="p-2.5"></th></tr></thead>
+                            <thead class="bg-slate-100 text-slate-600 sticky top-0"><tr><th class="p-2.5 font-semibold">מס''ד</th><th class="p-2.5 font-semibold">שם אתר</th><th class="p-2.5 font-semibold">חטיבה</th><th class="p-2.5 font-semibold">שטח</th><th class="p-2.5 font-semibold">מצלמות</th><th class="p-2.5 font-semibold">נ.צ</th><th class="p-2.5"></th></tr></thead>
                             <tbody id="sitesBody"></tbody>
                         </table>
                     </div>
@@ -280,8 +280,8 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">חטמ"ר / אזור</label>
-                    <input type="text" id="newRegion" list="regionList" placeholder="לדוגמה: חטמ&quot;ר בנימין" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">חטיבה</label>
+                    <input type="text" id="newRegion" list="regionList" placeholder="לדוגמה: חטיבה מרחבית" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                     <datalist id="regionList"></datalist>
                 </div>
                 <div>
@@ -366,7 +366,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">חטמ"ר / אזור</label>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">חטיבה</label>
                         <input type="text" id="closeRegion" list="regionList" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                     </div>
                 </div>
@@ -407,7 +407,7 @@
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const ROLE = { admin: 'מנהל מערכת', user: 'משתמש רגיל' };
 
-        let me = null, calls = [], users = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
+        let me = null, calls = [], users = [], sites = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
         const isAdmin = () => me && me.role === 'admin';
 
         /* ---------- Auth ---------- */
@@ -500,34 +500,32 @@
         const techName = id => (users.find(u => u.id === id) || {}).username || 'לא שויך';
 
         /* ---------- Operations log (admin only, reads table operations_log) ---------- */
-        const DEFAULT_HANDLER = "צוות ית\"ד - דרג ג'";
         let logRows = [];
         const LOG_COLUMNS = [
             { key: 'num',       label: 'מס׳ אירוע',      w: 10, on: true,  get: r => r.incident_number ?? '' },
-            { key: 'date',      label: 'תאריך',          w: 10, on: true,  get: r => r.event_day && r.event_month ? `${r.event_day}.${r.event_month}` : '' },
-            { key: 'provider',  label: 'ספק',            w: 10, on: true,  get: r => r.provider || '' },
-            { key: 'region',    label: 'חטמ"ר / אזור',   w: 14, on: true,  get: r => r.region || '' },
-            { key: 'site',      label: 'אתר',            w: 24, on: true,  get: r => r.site_name || '' },
-            { key: 'cams',      label: 'מצלמות',         w: 9,  on: true,  get: r => r.camera_count ?? '' },
+            { key: 'date',      label: 'תאריך',          w: 10, on: true,  get: r => r["יום"] && r["חודש"] ? `${r["יום"]}.${r["חודש"]}` : '' },
+            { key: 'provider',  label: 'שטח',            w: 10, on: true,  get: r => r["שטח"] || '' },
+            { key: 'region',    label: 'חטיבה',          w: 14, on: true,  get: r => r["חטיבה"] || '' },
+            { key: 'site',      label: 'שם האתר',        w: 24, on: true,  get: r => r["שם האתר"] || '' },
+            { key: 'cams',      label: 'מס\' מצלמות',    w: 9,  on: true,  get: r => r["מס' מצלמות"] ?? '' },
             { key: 'ip',        label: 'כתובת IP',       w: 15, on: false, get: r => r.ip_address || '' },
-            { key: 'leader',    label: 'מוביל יום',      w: 12, on: true,  get: r => r.team_leader || '' },
-            { key: 'vehicle',   label: 'רכב / אמצעי',    w: 12, on: true,  get: r => r.vehicle_type || '' },
-            { key: 'wms',       label: "נפתח בצ'ק",      w: 10, on: true,  get: r => r.opened_in_wms || '' },
-            { key: 'handler',   label: 'גורם מטפל',      w: 22, on: true,  get: r => r.handler || '' },
-            { key: 'fault',     label: 'תקלה',           w: 28, on: true,  get: r => r.fault_description || '' },
-            { key: 'status',    label: 'מצב האתר',       w: 10, on: true,  get: r => r.status || '' },
-            { key: 'treatment', label: 'טיפול שבוצע',    w: 36, on: false, get: r => r.treatment || '' },
-            { key: 'parts',     label: 'חלקים שהוחלפו',  w: 18, on: false, get: r => r.parts_replaced || '' },
-            { key: 'hours',     label: 'שעות עבודה',     w: 10, on: false, get: r => r.work_hours ?? '' },
-            { key: 'notes',     label: 'הערות',          w: 30, on: false, get: r => r.notes || '' },
-            { key: 'tech',      label: 'טכנאי',          w: 14, on: false, get: r => r.technician || '' },
-            { key: 'priority',  label: 'דחיפות',         w: 12, on: false, get: r => r.priority || '' },
+            { key: 'leader',    label: 'מפקד צוות',      w: 12, on: true,  get: r => r["מפקד צוות"] || '' },
+            { key: 'vehicle',   label: 'סל מנוף',        w: 12, on: true,  get: r => r["סל מנוף"] || '' },
+            { key: 'wms',       label: "נפתח בצ'ק",      w: 10, on: true,  get: r => r["נפתח בצ'ק"] || '' },
+            { key: 'handler',   label: 'גורם מטפל',      w: 22, on: true,  get: r => r["גורם מטפל"] || '' },
+            { key: 'fault',     label: 'תאור התקלה',     w: 28, on: true,  get: r => r["תאור התקלה"] || '' },
+            { key: 'status',    label: 'סטטוס',          w: 10, on: true,  get: r => r["סטטוס"] || '' },
+            { key: 'treatment', label: 'טיפול/הערות',    w: 36, on: false, get: r => r["טיפול/הערות"] || '' },
+            { key: 'parts',     label: 'החלפת רכיבים',   w: 18, on: false, get: r => r["החלפת רכיבים"] || '' },
+            { key: 'elec',      label: 'הרמת חשמל',      w: 10, on: false, get: r => r["הרמת חשמל"] || '' },
+            { key: 'rebootR',   label: 'ריבוט מרחוק',    w: 12, on: false, get: r => r["ריבוט מרחוק"] || '' },
+            { key: 'rebootL',   label: 'ריבוט/ריסוט מקומי', w: 14, on: false, get: r => r["ריבוט/ריסוט מקומי"] || '' },
             { key: 'closed',    label: 'נסגר בתאריך',    w: 13, on: false, get: r => (r.closed_at || r.created_at || '').slice(0, 10) }
         ];
         const defaultLogCols = () => LOG_COLUMNS.filter(c => c.on).map(c => c.key);
         function loadLogCols() {
             try {
-                const saved = JSON.parse(localStorage.getItem('log_columns_v2') || 'null');
+                const saved = JSON.parse(localStorage.getItem('log_columns_v3') || 'null');
                 if (Array.isArray(saved)) {
                     const valid = saved.filter(k => LOG_COLUMNS.some(c => c.key === k));
                     if (valid.length) return valid;
@@ -535,7 +533,7 @@
             } catch (e) {}
             return defaultLogCols();
         }
-        function saveLogCols() { try { localStorage.setItem('log_columns_v2', JSON.stringify(logCols)); } catch (e) {} }
+        function saveLogCols() { try { localStorage.setItem('log_columns_v3', JSON.stringify(logCols)); } catch (e) {} }
         let logCols = loadLogCols();
         const activeLogCols = () => LOG_COLUMNS.filter(c => logCols.includes(c.key));
 
@@ -576,9 +574,9 @@
             const mo = $('logMonth').value, reg = $('logRegion').value, pr = $('logProvider').value,
                   st = $('logStatus').value, q = $('logSearch').value.trim().toLowerCase();
             return logRows.filter(r =>
-                (!mo || String(r.event_month) === mo) && (!reg || r.region === reg) &&
-                (!pr || r.provider === pr) && (!st || r.status === st) &&
-                (!q || [r.site_name, r.fault_description, r.team_leader, r.treatment, r.notes, r.handler].join(' ').toLowerCase().includes(q)));
+                (!mo || String(r["חודש"]) === mo) && (!reg || r["חטיבה"] === reg) &&
+                (!pr || r["שטח"] === pr) && (!st || r["סטטוס"] === st) &&
+                (!q || [r["שם האתר"], r["תאור התקלה"], r["מפקד צוות"], r["טיפול/הערות"], r["גורם מטפל"]].join(' ').toLowerCase().includes(q)));
         }
         function fillLogFilters() {
             const fill = (id, label, vals) => {
@@ -586,21 +584,20 @@
                 el.innerHTML = `<option value="">${label}</option>` + [...new Set(vals.filter(Boolean))].sort().map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
                 el.value = cur;
             };
-            fill('logRegion', 'הכל', logRows.map(r => r.region));
-            fill('logProvider', 'הכל', logRows.map(r => r.provider));
+            fill('logRegion', 'הכל', logRows.map(r => r["חטיבה"]));
+            fill('logProvider', 'הכל', logRows.map(r => r["שטח"]));
         }
         function renderLog() {
             if (!isAdmin()) return;
             fillLogFilters();
             const cols = activeLogCols(), list = logFiltered();
             $('logTotal').textContent = list.length;
-            $('logOk').textContent = list.filter(r => r.status === 'תקין').length;
-            $('logBad').textContent = list.filter(r => r.status === 'לא תקין').length;
-            $('logHours').textContent = list.reduce((s, r) => s + (parseFloat(r.work_hours) || 0), 0);
+            $('logOk').textContent = list.filter(r => r["סטטוס"] === 'תקין').length;
+            $('logBad').textContent = list.filter(r => r["סטטוס"] === 'לא תקין').length;
 
             const cell = (col, r) => {
                 const v = esc(col.get(r));
-                if (col.key === 'status') return `<td class="p-2.5"><span class="px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${r.status === 'תקין' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${v}</span></td>`;
+                if (col.key === 'status') return `<td class="p-2.5"><span class="px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${r["סטטוס"] === 'תקין' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${v}</span></td>`;
                 if (col.key === 'site') return `<td class="p-2.5 font-bold text-slate-800">${v}</td>`;
                 if (['fault', 'treatment', 'notes', 'handler'].includes(col.key)) return `<td class="p-2.5 min-w-[140px]">${v}</td>`;
                 return `<td class="p-2.5 whitespace-nowrap">${v}</td>`;
@@ -624,19 +621,19 @@
                 const m = new Map();
                 list.forEach(r => {
                     const k = fn(r) || 'לא צוין';
-                    const g = m.get(k) || { n: 0, h: 0 };
-                    g.n++; g.h += parseFloat(r.work_hours) || 0;
+                    const g = m.get(k) || { n: 0 };
+                    g.n++;
                     m.set(k, g);
                 });
-                return [...m].map(([k, g]) => [k, g.n, g.h]);
+                return [...m].map(([k, g]) => [k, g.n]);
             };
-            const block = (title, fn) => [[title], [title, 'אירועים', 'שעות'], ...group(fn), []];
+            const block = (title, fn) => [[title], [title, 'אירועים'], ...group(fn), []];
             const aoa = [['סיכום יומן מבצעים'], ['תאריך הפקה', localToday()], ['סה"כ אירועים', list.length], [],
-                ...block('לפי מצב האתר', r => r.status), ...block('לפי חטמ"ר / אזור', r => r.region),
-                ...block('לפי ספק', r => r.provider), ...block('לפי מוביל יום', r => r.team_leader),
-                ...block('לפי סוג תקלה', r => r.fault_description)];
+                ...block('לפי מצב האתר', r => r["סטטוס"]), ...block('לפי חטיבה', r => r["חטיבה"]),
+                ...block('לפי שטח', r => r["שטח"]), ...block('לפי מפקד צוות', r => r["מפקד צוות"]),
+                ...block('לפי תאור התקלה', r => r["תאור התקלה"])];
             const ws2 = XLSX.utils.aoa_to_sheet(aoa);
-            ws2['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 10 }];
+            ws2['!cols'] = [{ wch: 26 }, { wch: 10 }];
 
             const wb = XLSX.utils.book_new();
             wb.Workbook = { Views: [{ RTL: true }] };
@@ -655,55 +652,68 @@
             if (!isAdmin()) return;
             const all = [];
             for (let from = 0; ; from += 1000) {
-                const { data, error } = await sb.from('sites').select('*').order('site_name').range(from, from + 999);
+                const { data, error } = await sb.from('sites').select('*').order('שם האתר').range(from, from + 999);
                 if (error) { console.error(error); setSitesMsg('לא ניתן לטעון את רשימת האתרים: ' + error.message); break; }
                 all.push(...data);
                 if (data.length < 1000) break;
             }
             sites = all;
-            $('siteList').innerHTML = sites.map(s => `<option value="${esc(s.site_name)}" label="${esc(s.region || '')}"></option>`).join('');
+            $('siteList').innerHTML = sites.map(s => `<option value="${esc(s["שם האתר"])}" label="${esc(s["חטיבה"] || '')}"></option>`).join('');
             if (!$('viewSites').classList.contains('hidden')) renderSites();
         }
         function renderSites() {
             const q = ($('sitesSearch').value || '').trim().toLowerCase();
-            const list = sites.filter(s => !q || [s.site_name, s.region, s.provider].join(' ').toLowerCase().includes(q));
+            const list = sites.filter(s => !q || [s["שם האתר"], s["חטיבה"], s["שטח"]].join(' ').toLowerCase().includes(q));
             $('sitesCount').textContent = `${sites.length} אתרים במאגר` + (q ? ` (נמצאו ${list.length})` : '');
             const rows = list.slice(0, 300).map(s => `
                 <tr class="border-t border-gray-100 hover:bg-slate-50">
-                    <td class="p-2.5 text-gray-500">${esc(s.site_id)}</td>
-                    <td class="p-2.5 font-bold text-slate-800">${esc(s.site_name)}</td>
-                    <td class="p-2.5">${esc(s.region || '')}</td>
-                    <td class="p-2.5">${esc(s.provider || '')}</td>
-                    <td class="p-2.5">${esc(s.camera_count ?? '')}</td>
-                    <td class="p-2.5 text-left"><button type="button" onclick="deleteSite(${s.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td>
+                    <td class="p-2.5 text-gray-500">${esc(s['מס""ד'])}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${esc(s["שם האתר"])}</td>
+                    <td class="p-2.5">${esc(s["חטיבה"] || '')}</td>
+                    <td class="p-2.5">${esc(s["שטח"] || '')}</td>
+                    <td class="p-2.5">${esc(s["מס' מצלמות"] ?? '')}</td>
+                    <td class="p-2.5">${esc(s["נ.צ"] || '')}</td>
+                    <td class="p-2.5 text-left"><button type="button" onclick="deleteSite(${s['מס""ד']})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`).join('');
-            $('sitesBody').innerHTML = (rows || '<tr><td colspan="6" class="text-center text-gray-400 py-6">אין אתרים להצגה</td></tr>')
-                + (list.length > 300 ? '<tr><td colspan="6" class="text-center text-gray-400 py-2">מוצגים 300 הראשונים. השתמש בחיפוש כדי לצמצם</td></tr>' : '');
+            $('sitesBody').innerHTML = (rows || '<tr><td colspan="7" class="text-center text-gray-400 py-6">אין אתרים להצגה</td></tr>')
+                + (list.length > 300 ? '<tr><td colspan="7" class="text-center text-gray-400 py-2">מוצגים 300 הראשונים. השתמש בחיפוש כדי לצמצם</td></tr>' : '');
         }
         async function addSiteManual() {
-            const site_name = $('sitesNewName').value.trim(), region = $('sitesNewRegion').value.trim(),
-                  provider = $('sitesNewProvider').value.trim(), camera_count = parseInt($('sitesNewCams').value) || 0;
-            if (!site_name || !region) return alert('נא למלא שם אתר וחטמ"ר.');
-            if (sites.some(s => s.site_name === site_name)) return alert('אתר בשם זה כבר קיים.');
-            const site_id = Math.max(0, ...sites.map(s => s.site_id || 0)) + 1;
-            const { error } = await sb.from('sites').insert({ site_id, site_name, region, provider, camera_count });
+            const site_id_val = parseInt($('sitesNewId').value);
+            const site_name = $('sitesNewName').value.trim();
+            const region = $('sitesNewRegion').value.trim();
+            const provider = $('sitesNewProvider').value.trim();
+            const camera_count = parseInt($('sitesNewCams').value) || 0;
+
+            if (isNaN(site_id_val) || !site_name || !region) return alert('נא למלא מס"ד (מזהה מספרי), שם אתר וחטיבה.');
+            if (sites.some(s => s['מס""ד'] === site_id_val)) return alert('אתר עם מזהה מס"ד זה כבר קיים.');
+            if (sites.some(s => s["שם האתר"] === site_name)) return alert('אתר בשם זה כבר קיים.');
+
+            const { error } = await sb.from('sites').insert({
+                'מס""ד': site_id_val,
+                '2לא רלוונטי': site_id_val, // במידה והשדה דורש ערך ייחודי לפי המבנה שלך
+                'שם האתר': site_name,
+                'חטיבה': region,
+                'שטח': provider,
+                "מס' מצלמות": camera_count
+            });
             if (error) return alert('שגיאה: ' + error.message);
-            ['sitesNewName', 'sitesNewRegion', 'sitesNewProvider', 'sitesNewCams'].forEach(i => $(i).value = '');
+            ['sitesNewId', 'sitesNewName', 'sitesNewRegion', 'sitesNewProvider', 'sitesNewCams'].forEach(i => $(i).value = '');
             await loadSites(); renderSites();
         }
         async function deleteSite(id) {
-            const s = sites.find(x => x.id === id);
-            if (!s || !confirm(`למחוק את האתר "${s.site_name}" מהמאגר?`)) return;
-            const { error } = await sb.from('sites').delete().eq('id', id);
+            const s = sites.find(x => x['מס""ד'] === id);
+            if (!s || !confirm(`למחוק את האתר "${s["שם האתר"]}" מהמאגר?`)) return;
+            const { error } = await sb.from('sites').delete().eq('מס""ד', id);
             if (error) return alert(error.code === '23503' ? 'לא ניתן למחוק אתר שיש עליו קריאות או רישומים ביומן המבצעים.' : 'שגיאה: ' + error.message);
             await loadSites(); renderSites();
         }
         function onSiteInput() {
             const v = $('newSiteName').value.trim(), hint = $('siteHint');
-            const s = sites.find(x => x.site_name === v);
+            const s = sites.find(x => x["שם האתר"] === v);
             if (s) {
-                if (s.region) $('newRegion').value = s.region;
-                hint.textContent = `נמצא במאגר${s.provider ? ' · ספק: ' + s.provider : ''}${s.camera_count ? ' · ' + s.camera_count + ' מצלמות' : ''}`;
+                if (s["חטיבה"]) $('newRegion').value = s["חטיבה"];
+                hint.textContent = `נמצא במאגר${s["שטח"] ? ' · שטח: ' + s["שטח"] : ''}${s["מס' מצלמות"] ? ' · ' + s["מס' מצלמות"] + ' מצלמות' : ''}`;
                 hint.className = 'text-[11px] text-emerald-600 mt-1';
             } else {
                 hint.textContent = v ? 'האתר לא במאגר. יש לבחור אתר מהרשימה' : '';
@@ -825,7 +835,7 @@
                 priority: $('newPriority').value, status: 'חדשה', created_by: me.id, region: $('newRegion').value.trim()
             };
             if (!row.site_name || !row.problem || !row.call_date) return alert('נא למלא את כל שדות החובה.');
-            if (!sites.some(x => x.site_name === row.site_name)) return alert('יש לבחור אתר מהרשימה שבמאגר האתרים.');
+            if (!sites.some(x => x["שם האתר"] === row.site_name)) return alert('יש לבחור אתר מהרשימה שבמאגר האתרים.');
             const { error } = await sb.from('calls').insert(row);
             if (error) return alert('שגיאה בשמירה: ' + error.message);
             closeModal('newCallModal');
@@ -843,7 +853,7 @@
             $('closeSiteOk').value = activeCall.site_ok === false ? 'bad' : 'ok';
             $('closeIp').value = activeCall.ip_address || '';
             $('closeVehicle').value = activeCall.vehicle_type || 'ללא';
-            $('closeHandler').value = activeCall.handler || DEFAULT_HANDLER;
+            $('closeHandler').value = activeCall.handler || "צוות ית\"ד - דרג ג'";
             $('closeRegion').value = activeCall.region || '';
             $('closeCheck').checked = !!activeCall.opened_in_check;
             $('closeNotes').value = activeCall.notes || '';

@@ -643,7 +643,7 @@
         }
 
         /* ---------- Sites database (admin, reads table sites) ---------- */
-        let sites = [];
+        // `sites` is declared with the other global state variables above.
         function setSitesMsg(t, ok) {
             const m = $('sitesMsg'); m.textContent = t;
             m.className = 'text-xs font-bold ' + (ok ? 'text-emerald-600' : 'text-red-500');

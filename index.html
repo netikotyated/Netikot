@@ -348,17 +348,11 @@
                     <label class="block text-xs font-medium text-gray-700 mb-1">רכיבים שהוחלפו</label>
                     <input type="text" id="replacedParts" placeholder="לדוגמה: ספק כוח, כבל..." class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">שעות עבודה בפועל</label>
-                        <input type="number" step="0.5" id="workHours" value="1" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">סטטוס סופי</label>
-                        <select id="finalStatus" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                            <option value="הושלמה">הושלמה בהצלחה</option><option value="בטיפול">נדרש המשך טיפול</option><option value="מבוטלת">מבוטלת</option>
-                        </select>
-                    </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">סטטוס סופי</label>
+                    <select id="finalStatus" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                        <option value="הושלמה">הושלמה בהצלחה</option><option value="בטיפול">נדרש המשך טיפול</option><option value="מבוטלת">מבוטלת</option>
+                    </select>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -378,9 +372,13 @@
                     <div class="flex items-center pt-5">
                         <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeCrane"> נעשה שימוש בסל מנוף</label>
                     </div>
-                    <div><label class="block text-xs font-medium text-gray-700 mb-1">גורם מטפל</label>
-                        <input type="text" id="closeHandler" list="handlerList" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                        <datalist id="handlerList"><option value="צוות ית&quot;ד - דרג ג'"></option><option value="דסק ית&quot;ד - דרג ב'"></option></datalist></div>
+                    <div><label class="block text-xs font-medium text-gray-700 mb-1">גורם מטפל *</label>
+                        <select id="closeHandler" required class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                            <option value="">בחר גורם מטפל</option>
+                            <option value="ית&quot;ד - צוות שטח">ית&quot;ד - צוות שטח</option>
+                            <option value="ית&quot;ד - צוות דסק">ית&quot;ד - צוות דסק</option>
+                            <option value="חברה אזרחית">חברה אזרחית</option>
+                        </select></div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3">
                     <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeCheck"> נפתח בצ'ק</label>
@@ -890,7 +888,6 @@
             if (!activeCall) return;
             $('solutionDesc').value = activeCall.solution || '';
             $('replacedParts').value = activeCall.parts || '';
-            $('workHours').value = activeCall.hours || 1;
             $('finalStatus').value = activeCall.status === 'חדשה' ? 'הושלמה' : activeCall.status;
             $('closeSiteOk').value = activeCall.site_ok === false ? 'bad' : 'ok';
             $('closeIp').value = activeCall.ip_address || '';
@@ -899,7 +896,8 @@
             $('closeLocalReboot').checked = !!activeCall.local_reboot;
             $('closeRemoteReboot').checked = !!activeCall.remote_reboot;
             $('closeSimReplace').checked = !!activeCall.sim_replaced;
-            $('closeHandler').value = activeCall.handler || "צוות ית\"ד - דרג ג'";
+            const validHandlers = ['ית\"ד - צוות שטח', 'ית\"ד - צוות דסק', 'חברה אזרחית'];
+            $('closeHandler').value = validHandlers.includes(activeCall.handler) ? activeCall.handler : '';
             $('closeRegion').value = activeCall.region || '';
             $('closeCheck').checked = !!activeCall.opened_in_check;
             $('closeNotes').value = activeCall.notes || '';
@@ -907,9 +905,10 @@
         }
         async function saveCompletedCall() {
             if (!activeCall) return;
+            if (!$('closeHandler').value) return alert('יש לבחור גורם מטפל מהרשימה.');
             const { error } = await sb.from('calls').update({
                 solution: $('solutionDesc').value, parts: $('replacedParts').value,
-                hours: parseFloat($('workHours').value) || 0, status: $('finalStatus').value,
+                status: $('finalStatus').value,
                 site_ok: $('closeSiteOk').value === 'ok' ? true : $('closeSiteOk').value === 'bad' ? false : null,
                 region: $('closeRegion').value.trim(), opened_in_check: $('closeCheck').checked,
                 notes: $('closeNotes').value.trim(),
@@ -933,7 +932,6 @@
 ⚠️ *תקלה:* ${activeCall.problem}
 🔧 *פתרון:* ${$('solutionDesc').value || 'טרם הוזן'}
 ⚙️ *חלקים שהוחלפו:* ${$('replacedParts').value || 'ללא'}
-⏱️ *שעות עבודה:* ${$('workHours').value}
 📌 *סטטוס:* ${$('finalStatus').value}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
         }

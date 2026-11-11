@@ -761,6 +761,7 @@
         const ROLE = { admin: 'מנהל מערכת', user: 'טכנאי' };
 
         let me = null, calls = [], users = [], sites = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
+        const collapsedDays = new Set(); // תאריכים מקופלים (ברירת מחדל: הכל פתוח)
         const isAdmin = () => me && me.role === 'admin';
 
         /* ---------- Auth ---------- */
@@ -1149,6 +1150,11 @@
             const [y, m, d] = dateStr.split('-');
             return new Date(y, m - 1, d).toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
         }
+        function toggleDay(dateStr) {
+            if (collapsedDays.has(dateStr)) collapsedDays.delete(dateStr);
+            else collapsedDays.add(dateStr);
+            renderCalls();
+        }
         function renderCalls() {
             const container = $('groupedCallsContainer');
             const search = ($('searchSite').value || '').toLowerCase();
@@ -1177,6 +1183,8 @@
             filtered.forEach(c => (grouped[c.call_date] = grouped[c.call_date] || []).push(c));
 
             container.innerHTML = Object.keys(grouped).sort().map(dateStr => {
+                const isCollapsed = collapsedDays.has(dateStr);
+                const count = grouped[dateStr].length;
                 const cards = grouped[dateStr].map(c => {
                     let badge = 'bg-blue-50 text-blue-700 border-blue-100';
                     let badgeIcon = 'fa-circle';
@@ -1228,14 +1236,20 @@
                 }).join('');
                 return `
                 <div class="space-y-3">
-                    <div class="flex items-center gap-2.5 bg-white border border-slate-100 rounded-xl px-4 py-2.5 shadow-soft">
-                        <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                    <button type="button" onclick="toggleDay('${dateStr}')"
+                            class="w-full flex items-center gap-2.5 bg-white border border-slate-100 rounded-xl px-4 py-3 shadow-soft hover:bg-slate-50 hover:border-slate-200 transition cursor-pointer text-right group"
+                            aria-expanded="${!isCollapsed}"
+                            title="${isCollapsed ? 'הצג קריאות' : 'הסתר קריאות'}">
+                        <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition">
                             <i class="fa-solid fa-calendar-day text-sm"></i>
                         </div>
-                        <h3 class="font-bold text-slate-800 text-sm md:text-base">${formatDateHebrew(dateStr)}</h3>
-                        <span class="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${grouped[dateStr].length} קריאות</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">${cards}</div>
+                        <h3 class="font-bold text-slate-800 text-sm md:text-base flex-1">${formatDateHebrew(dateStr)}</h3>
+                        <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full shrink-0">${count} קריאות</span>
+                        <div class="w-8 h-8 flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition shrink-0">
+                            <i class="fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-sm transition-transform"></i>
+                        </div>
+                    </button>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 ${isCollapsed ? 'hidden' : ''}">${cards}</div>
                 </div>`;
             }).join('');
         }

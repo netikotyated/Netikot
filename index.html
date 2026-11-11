@@ -8,393 +8,740 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50:  '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 8px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.06)',
+                        'card': '0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.08)',
+                        'card-hover': '0 4px 16px -2px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06)',
+                        'modal': '0 25px 50px -12px rgba(15, 23, 42, 0.25)'
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
-        body { font-family: 'Heebo', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Heebo', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Focus ring utility */
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+            border-color: #3b82f6;
+        }
+
+        /* Input base */
+        .input-base {
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .input-base:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Button press */
+        .btn-press:active { transform: scale(0.97); }
+
+        /* Card hover lift */
+        .card-lift {
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .card-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+        }
+
+        /* Tab underline animation */
+        .tab-btn {
+            position: relative;
+            transition: color 0.15s;
+        }
+        .tab-btn.active {
+            color: #fff;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            height: 2.5px;
+            background: #3b82f6;
+            border-radius: 2px 2px 0 0;
+        }
+
+        /* Status badge pulse for open */
+        @keyframes soft-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .status-open { animation: soft-pulse 2.5s ease-in-out infinite; }
+
+        /* Modal fade */
+        .modal-overlay {
+            animation: fadeIn 0.18s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-panel {
+            animation: slideUp 0.22s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Sticky table header shadow */
+        .table-sticky thead th {
+            box-shadow: 0 1px 0 #e2e8f0;
+        }
+
+        /* Toast slide */
+        #toast.show {
+            display: flex !important;
+            animation: toastIn 0.3s ease;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translate(-50%, -12px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        /* Category filter active state */
+        .cat-btn {
+            transition: all 0.15s ease;
+        }
+
+        /* Better number inputs in RTL */
+        input[type="number"] { direction: ltr; text-align: right; }
+        input[type="date"] { direction: ltr; }
+        input[type="email"], input[type="password"] { direction: ltr; text-align: left; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
-    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] hidden bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-bold">
-        <i class="fa-solid fa-circle-check ml-2"></i><span id="toastText"></span>
+    <!-- Toast -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-[60] hidden items-center gap-2 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-lg text-sm font-semibold">
+        <i class="fa-solid fa-circle-check text-base"></i>
+        <span id="toastText"></span>
     </div>
 
-    <!-- Auth Screen: login / pending -->
-    <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-5">
+    <!-- ==================== Auth Screen ==================== -->
+    <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+         style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);">
+        <!-- Decorative blobs -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-32 -right-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-7 md:p-9 space-y-6">
             <div class="text-center">
-                <div class="bg-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg"><i class="fa-solid fa-wrench"></i></div>
-                <h1 class="text-2xl font-bold text-gray-900">מערכת ניהול קריאות</h1>
-                <p id="authSub" class="text-sm text-gray-500 mt-1">התחבר למערכת עם פרטי המשתמש שלך</p>
+                <div class="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-2xl shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-wrench"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">מערכת ניהול קריאות</h1>
+                <p id="authSub" class="text-sm text-slate-500 mt-1.5">התחבר למערכת עם פרטי המשתמש שלך</p>
             </div>
 
             <form id="authForm" onsubmit="submitAuth(event)" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
-                    <input type="email" id="authEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right bg-white text-gray-800" dir="ltr">
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">אימייל</label>
+                    <input type="email" id="authEmail" required
+                           class="input-base w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 placeholder-slate-400"
+                           placeholder="name@example.com" dir="ltr">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
-                    <input type="password" id="authPass" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right bg-white text-gray-800" dir="ltr">
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">סיסמה</label>
+                    <input type="password" id="authPass" required minlength="6"
+                           class="input-base w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 placeholder-slate-400"
+                           placeholder="••••••••" dir="ltr">
                 </div>
-                <div id="authMsg" class="text-sm text-center hidden font-bold"></div>
-                <button type="submit" id="authBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-md">כניסה למערכת</button>
+                <div id="authMsg" class="text-sm text-center hidden font-semibold"></div>
+                <button type="submit" id="authBtn"
+                        class="btn-press w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/30">
+                    כניסה למערכת
+                </button>
             </form>
 
-            <div id="pendingBox" class="hidden text-center space-y-4">
-                <div class="bg-amber-100 text-amber-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-hourglass-half"></i></div>
-                <h2 class="font-bold text-lg text-slate-900">החשבון ממתין לאישור מנהל</h2>
-                <p class="text-sm text-gray-500">מנהל המערכת צריך לאשר את המשתמש שלך לפני הכניסה. נסה שוב מאוחר יותר.</p>
-                <div class="flex gap-2">
-                    <button type="button" onclick="boot()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium">בדוק שוב</button>
-                    <button type="button" onclick="logout()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium">התנתק</button>
+            <div id="pendingBox" class="hidden text-center space-y-5">
+                <div class="bg-amber-50 text-amber-600 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-xl border border-amber-100">
+                    <i class="fa-solid fa-hourglass-half"></i>
                 </div>
-                <button type="button" onclick="deleteMyAccount()" class="text-xs text-red-500 hover:underline">מחיקת החשבון שלי</button>
+                <div>
+                    <h2 class="font-bold text-lg text-slate-900">החשבון ממתין לאישור מנהל</h2>
+                    <p class="text-sm text-slate-500 mt-1.5 leading-relaxed">מנהל המערכת צריך לאשר את המשתמש שלך לפני הכניסה. נסה שוב מאוחר יותר.</p>
+                </div>
+                <div class="flex gap-2.5">
+                    <button type="button" onclick="boot()"
+                            class="btn-press flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow-sm">
+                        בדוק שוב
+                    </button>
+                    <button type="button" onclick="logout()"
+                            class="btn-press flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-sm font-semibold">
+                        התנתק
+                    </button>
+                </div>
+                <button type="button" onclick="deleteMyAccount()" class="text-xs text-red-500 hover:text-red-600 hover:underline transition">
+                    מחיקת החשבון שלי
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Main App -->
+    <!-- ==================== Main App ==================== -->
     <div id="appContainer" class="flex-1 flex flex-col hidden">
-        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 py-3 md:py-4 flex justify-between items-center">
-                <div class="flex items-center space-x-3 space-x-reverse">
-                    <div class="bg-blue-600 p-2 rounded-lg text-white"><i class="fa-solid fa-tools text-lg md:text-xl"></i></div>
+
+        <!-- Header -->
+        <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-3.5 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-2.5 rounded-xl shadow-md shadow-blue-600/30">
+                        <i class="fa-solid fa-tools text-lg"></i>
+                    </div>
                     <div>
-                        <h1 class="text-lg md:text-xl font-bold leading-tight">ניהול קריאות שירות</h1>
-                        <p class="text-xs text-slate-400" id="userInfoDisplay"></p>
+                        <h1 class="text-base md:text-lg font-bold leading-tight tracking-tight">ניהול קריאות שירות</h1>
+                        <p class="text-xs text-slate-400 mt-0.5" id="userInfoDisplay"></p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                <button type="button" onclick="deleteMyAccount()" title="מחק את החשבון שלי" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm transition duration-200 flex items-center space-x-2 space-x-reverse">
-                    <i class="fa-solid fa-user-xmark"></i><span class="hidden sm:inline">מחק חשבון</span>
-                </button>
-                <button type="button" onclick="logout()" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm transition duration-200 flex items-center space-x-2 space-x-reverse">
-                    <i class="fa-solid fa-right-from-bracket"></i><span class="hidden sm:inline">התנתק</span>
-                </button>
+                    <button type="button" onclick="deleteMyAccount()" title="מחק את החשבון שלי"
+                            class="btn-press bg-slate-800/80 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-2 rounded-xl text-xs md:text-sm transition flex items-center gap-2 border border-slate-700/50">
+                        <i class="fa-solid fa-user-xmark"></i>
+                        <span class="hidden sm:inline">מחק חשבון</span>
+                    </button>
+                    <button type="button" onclick="logout()"
+                            class="btn-press bg-slate-800/80 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-2 rounded-xl text-xs md:text-sm transition flex items-center gap-2 border border-slate-700/50">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span class="hidden sm:inline">התנתק</span>
+                    </button>
                 </div>
             </div>
-            <div class="bg-slate-800 border-t border-slate-700">
-                <div class="max-w-7xl mx-auto px-2 md:px-4 flex space-x-2 md:space-x-4 space-x-reverse overflow-x-auto">
-                    <button type="button" onclick="switchTab('board')" id="tabBoard" class="py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-blue-500 text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap">
-                        <i class="fa-solid fa-clipboard-list"></i><span id="tabBoardLabel">לוח קריאות</span>
+
+            <!-- Tabs -->
+            <div class="bg-slate-800/80 border-t border-slate-700/60 backdrop-blur">
+                <div class="max-w-7xl mx-auto px-2 md:px-4 flex gap-1 overflow-x-auto">
+                    <button type="button" onclick="switchTab('board')" id="tabBoard"
+                            class="tab-btn active py-3 px-3.5 md:px-4 text-white font-medium text-xs md:text-sm flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-clipboard-list opacity-80"></i>
+                        <span id="tabBoardLabel">לוח קריאות</span>
                     </button>
-                    <button type="button" onclick="switchTab('log')" id="tabLog" class="py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap">
-                        <i class="fa-solid fa-table"></i><span>יומן מבצעים</span>
+                    <button type="button" onclick="switchTab('log')" id="tabLog"
+                            class="tab-btn py-3 px-3.5 md:px-4 text-slate-400 hover:text-white font-medium text-xs md:text-sm flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-table opacity-80"></i>
+                        <span>יומן מבצעים</span>
                     </button>
-                    <button type="button" onclick="switchTab('sites')" id="tabSites" class="py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap">
-                        <i class="fa-solid fa-location-dot"></i><span>רשימת אתרים</span>
+                    <button type="button" onclick="switchTab('sites')" id="tabSites"
+                            class="tab-btn py-3 px-3.5 md:px-4 text-slate-400 hover:text-white font-medium text-xs md:text-sm flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-location-dot opacity-80"></i>
+                        <span>רשימת אתרים</span>
                     </button>
-                    <button type="button" onclick="switchTab('users')" id="tabUsers" class="py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-xs md:text-sm hidden items-center space-x-2 space-x-reverse whitespace-nowrap">
-                        <i class="fa-solid fa-users-gear"></i><span>ניהול ואישור משתמשים</span><span id="pendingBadge" class="hidden bg-red-500 text-white rounded-full px-1.5 text-[10px]"></span>
+                    <button type="button" onclick="switchTab('users')" id="tabUsers"
+                            class="tab-btn py-3 px-3.5 md:px-4 text-slate-400 hover:text-white font-medium text-xs md:text-sm hidden items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-users-gear opacity-80"></i>
+                        <span>ניהול משתמשים</span>
+                        <span id="pendingBadge" class="hidden bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none"></span>
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
-            <!-- Board -->
-            <div id="viewBoard" class="space-y-4 md:space-y-6">
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <button type="button" onclick="setCategoryFilter('ALL')" id="catBtn_ALL" class="p-3 rounded-xl font-medium text-xs md:text-sm flex items-center justify-center space-x-2 space-x-reverse transition bg-blue-600 text-white shadow-sm"><i class="fa-solid fa-layer-group"></i><span>כל הקריאות</span></button>
-                    <button type="button" onclick="setCategoryFilter('OPEN')" id="catBtn_OPEN" class="p-3 rounded-xl font-medium text-xs md:text-sm flex items-center justify-center space-x-2 space-x-reverse transition bg-white text-slate-700 border border-gray-200 hover:bg-slate-50 shadow-sm"><i class="fa-solid fa-spinner text-amber-500"></i><span>קריאות פתוחות</span></button>
-                    <button type="button" onclick="setCategoryFilter('RESOLVED')" id="catBtn_RESOLVED" class="p-3 rounded-xl font-medium text-xs md:text-sm flex items-center justify-center space-x-2 space-x-reverse transition bg-white text-slate-700 border border-gray-200 hover:bg-slate-50 shadow-sm"><i class="fa-solid fa-circle-check text-emerald-500"></i><span>קריאות שנפתרו</span></button>
-                    <button type="button" onclick="setCategoryFilter('FUTURE')" id="catBtn_FUTURE" class="p-3 rounded-xl font-medium text-xs md:text-sm flex items-center justify-center space-x-2 space-x-reverse transition bg-white text-slate-700 border border-gray-200 hover:bg-slate-50 shadow-sm"><i class="fa-solid fa-calendar-plus text-purple-500"></i><span>קריאות עתידיות</span></button>
+        <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 space-y-5">
+
+            <!-- ========== Board ========== -->
+            <div id="viewBoard" class="space-y-5">
+
+                <!-- Category filters -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <button type="button" onclick="setCategoryFilter('ALL')" id="catBtn_ALL"
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-blue-600 text-white shadow-soft">
+                        <i class="fa-solid fa-layer-group"></i><span>כל הקריאות</span>
+                    </button>
+                    <button type="button" onclick="setCategoryFilter('OPEN')" id="catBtn_OPEN"
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
+                        <i class="fa-solid fa-spinner text-amber-500"></i><span>קריאות פתוחות</span>
+                    </button>
+                    <button type="button" onclick="setCategoryFilter('RESOLVED')" id="catBtn_RESOLVED"
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i><span>קריאות שנפתרו</span>
+                    </button>
+                    <button type="button" onclick="setCategoryFilter('FUTURE')" id="catBtn_FUTURE"
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
+                        <i class="fa-solid fa-calendar-plus text-violet-500"></i><span>קריאות עתידיות</span>
+                    </button>
                 </div>
 
-                <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 bg-white p-3 md:p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                        <button type="button" id="newCallBtn" onclick="openNewCallModal()" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium text-sm items-center justify-center space-x-2 space-x-reverse shadow transition">
+                <!-- Actions bar -->
+                <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 bg-white p-3.5 md:p-4 rounded-2xl shadow-soft border border-slate-100">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full">
+                        <button type="button" id="newCallBtn" onclick="openNewCallModal()"
+                                class="hidden btn-press bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition">
                             <i class="fa-solid fa-plus"></i><span>פתח קריאה חדשה</span>
                         </button>
-                        <button type="button" onclick="openDailyModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center space-x-2 space-x-reverse shadow transition">
+                        <button type="button" onclick="openDailyModal()"
+                                class="btn-press bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition">
                             <i class="fa-brands fa-whatsapp text-base"></i><span>סיכום יום בוואטסאפ</span>
                         </button>
-                        <div class="relative flex-1 sm:w-64">
-                            <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 text-sm"></i>
-                            <input type="text" id="searchSite" oninput="renderCalls()" placeholder="חיפוש אתר או תקלה..." class="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                        <div class="relative flex-1 sm:max-w-xs">
+                            <i class="fa-solid fa-search absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input type="text" id="searchSite" oninput="renderCalls()" placeholder="חיפוש אתר או תקלה..."
+                                   class="input-base w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
                         </div>
                     </div>
                 </div>
+
                 <div id="groupedCallsContainer" class="space-y-6"></div>
             </div>
 
-            <!-- Operations log -->
-            <div id="viewLog" class="space-y-4 md:space-y-6 hidden">
-                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+            <!-- ========== Operations Log ========== -->
+            <div id="viewLog" class="space-y-5 hidden">
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-soft border border-slate-100 space-y-5">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                            <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">יומן מבצעים</h2>
-                            <p class="text-xs md:text-sm text-gray-500">כל תקלה שנסגרת מתועדת כאן אוטומטית. אפשר לסנן, לבחור עמודות ולייצא ל-Excel</p>
+                            <h2 class="text-lg md:text-xl font-bold text-slate-900">יומן מבצעים</h2>
+                            <p class="text-xs md:text-sm text-slate-500 mt-0.5">כל תקלה שנסגרת מתועדת כאן אוטומטית. אפשר לסנן, לבחור עמודות ולייצא ל-Excel</p>
                         </div>
                         <div class="flex gap-2">
-                            <button type="button" onclick="openLogColsModal()" class="bg-white hover:bg-slate-50 text-slate-700 border border-gray-300 font-medium px-4 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 shadow-sm transition"><i class="fa-solid fa-table-columns"></i><span>בחר עמודות</span></button>
-                            <button type="button" onclick="exportLogExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 shadow transition"><i class="fa-solid fa-file-excel"></i><span>ייצוא ל-Excel</span></button>
+                            <button type="button" onclick="openLogColsModal()"
+                                    class="btn-press bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-soft transition">
+                                <i class="fa-solid fa-table-columns"></i><span>בחר עמודות</span>
+                            </button>
+                            <button type="button" onclick="exportLogExcel()"
+                                    class="btn-press bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition">
+                                <i class="fa-solid fa-file-excel"></i><span>ייצוא ל-Excel</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-50 p-3 rounded-lg border border-gray-200">
-                        <div><label class="block text-[11px] text-gray-500 mb-1">חודש</label>
-                            <select id="logMonth" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                                <option value="">הכל</option><option value="1">ינואר</option><option value="2">פברואר</option><option value="3">מרץ</option><option value="4">אפריל</option><option value="5">מאי</option><option value="6">יוני</option><option value="7">יולי</option><option value="8">אוגוסט</option><option value="9">ספטמבר</option><option value="10">אוקטובר</option><option value="11">נובמבר</option><option value="12">דצמבר</option>
-                            </select></div>
-                        <div><label class="block text-[11px] text-gray-500 mb-1">חטיבה</label><select id="logRegion" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></select></div>
-                        <div><label class="block text-[11px] text-gray-500 mb-1">שטח</label><select id="logProvider" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></select></div>
-                        <div><label class="block text-[11px] text-gray-500 mb-1">סטטוס</label>
-                            <select id="logStatus" onchange="renderLog()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"><option value="">הכל</option><option value="תקין">תקין</option><option value="לא תקין">לא תקין</option></select></div>
-                        <div class="col-span-2 md:col-span-1"><label class="block text-[11px] text-gray-500 mb-1">חיפוש</label><input type="text" id="logSearch" oninput="renderLog()" placeholder="אתר, תקלה, טיפול..." class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800"></div>
+                    <!-- Filters -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-500 mb-1">חודש</label>
+                            <select id="logMonth" onchange="renderLog()" class="input-base w-full border border-slate-200 rounded-lg p-2 text-xs bg-white text-slate-800">
+                                <option value="">הכל</option>
+                                <option value="1">ינואר</option><option value="2">פברואר</option><option value="3">מרץ</option>
+                                <option value="4">אפריל</option><option value="5">מאי</option><option value="6">יוני</option>
+                                <option value="7">יולי</option><option value="8">אוגוסט</option><option value="9">ספטמבר</option>
+                                <option value="10">אוקטובר</option><option value="11">נובמבר</option><option value="12">דצמבר</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-500 mb-1">חטיבה</label>
+                            <select id="logRegion" onchange="renderLog()" class="input-base w-full border border-slate-200 rounded-lg p-2 text-xs bg-white text-slate-800"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-500 mb-1">שטח</label>
+                            <select id="logProvider" onchange="renderLog()" class="input-base w-full border border-slate-200 rounded-lg p-2 text-xs bg-white text-slate-800"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-500 mb-1">סטטוס</label>
+                            <select id="logStatus" onchange="renderLog()" class="input-base w-full border border-slate-200 rounded-lg p-2 text-xs bg-white text-slate-800">
+                                <option value="">הכל</option>
+                                <option value="תקין">תקין</option>
+                                <option value="לא תקין">לא תקין</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-[11px] font-medium text-slate-500 mb-1">חיפוש</label>
+                            <input type="text" id="logSearch" oninput="renderLog()" placeholder="אתר, תקלה, טיפול..."
+                                   class="input-base w-full border border-slate-200 rounded-lg p-2 text-xs bg-white text-slate-800 placeholder-slate-400">
+                        </div>
                     </div>
 
+                    <!-- Stats -->
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 flex items-center space-x-3 space-x-reverse"><div class="bg-blue-100 text-blue-600 p-2.5 rounded-lg"><i class="fa-solid fa-list-check"></i></div><div><p class="text-[10px] text-gray-500">סה"כ אירועים</p><h3 id="logTotal" class="text-lg font-bold text-slate-800">0</h3></div></div>
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 flex items-center space-x-3 space-x-reverse"><div class="bg-emerald-100 text-emerald-600 p-2.5 rounded-lg"><i class="fa-solid fa-circle-check"></i></div><div><p class="text-[10px] text-gray-500">אתר תקין</p><h3 id="logOk" class="text-lg font-bold text-slate-800">0</h3></div></div>
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 flex items-center space-x-3 space-x-reverse"><div class="bg-red-100 text-red-600 p-2.5 rounded-lg"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-[10px] text-gray-500">אתר לא תקין</p><h3 id="logBad" class="text-lg font-bold text-slate-800">0</h3></div></div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
+                            <div class="bg-blue-100 text-blue-600 p-2.5 rounded-xl"><i class="fa-solid fa-list-check"></i></div>
+                            <div>
+                                <p class="text-[11px] font-medium text-slate-500">סה״כ אירועים</p>
+                                <h3 id="logTotal" class="text-xl font-bold text-slate-800">0</h3>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
+                            <div class="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl"><i class="fa-solid fa-circle-check"></i></div>
+                            <div>
+                                <p class="text-[11px] font-medium text-slate-500">אתר תקין</p>
+                                <h3 id="logOk" class="text-xl font-bold text-slate-800">0</h3>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3 col-span-2 md:col-span-1">
+                            <div class="bg-red-100 text-red-600 p-2.5 rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div>
+                                <p class="text-[11px] font-medium text-slate-500">אתר לא תקין</p>
+                                <h3 id="logBad" class="text-xl font-bold text-slate-800">0</h3>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <!-- Table -->
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl table-sticky">
                         <table class="w-full text-xs text-right">
-                            <thead id="logHead" class="bg-slate-100 text-slate-600"></thead>
+                            <thead id="logHead" class="bg-slate-50 text-slate-600"></thead>
                             <tbody id="logBody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Sites list (admin) -->
-            <div id="viewSites" class="space-y-4 md:space-y-6 hidden">
-                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+            <!-- ========== Sites ========== -->
+            <div id="viewSites" class="space-y-5 hidden">
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-soft border border-slate-100 space-y-5">
                     <div>
-                        <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">מאגר אתרים</h2>
-                        <p class="text-xs md:text-sm text-gray-500">רשימת האתרים מבסיס הנתונים. בפתיחת קריאה בוחרים אתר מהרשימה והחטיבה נטענת אוטומטית</p>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-900">מאגר אתרים</h2>
+                        <p class="text-xs md:text-sm text-slate-500 mt-0.5">רשימת האתרים מבסיס הנתונים. בפתיחת קריאה בוחרים אתר מהרשימה והחטיבה נטענת אוטומטית</p>
                     </div>
                     <div id="sitesMsg" class="text-xs font-bold hidden"></div>
 
-                    <div class="bg-slate-50 p-3 rounded-xl border border-gray-200 space-y-2">
+                    <!-- Add site -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2.5">
                         <label class="block text-xs font-bold text-slate-700">הוספת אתר חדש</label>
                         <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-                            <input type="number" id="sitesNewId" placeholder="מס''ד (מזהה) *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <input type="text" id="sitesNewName" placeholder="שם אתר *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <input type="text" id="sitesNewRegion" placeholder="חטיבה *" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <input type="text" id="sitesNewProvider" placeholder="שטח" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <input type="number" id="sitesNewCams" placeholder="מצלמות" min="0" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <input type="text" id="sitesNewCoords" placeholder="נ.צ. (קו רוחב, קו אורך)" class="border border-gray-300 rounded-lg p-2 text-xs bg-white text-gray-800">
-                            <button type="button" onclick="addSiteManual()" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-xs font-medium shadow transition">הוסף</button>
+                            <input type="number" id="sitesNewId" placeholder="מס״ד (מזהה) *"
+                                   class="input-base border border-slate-200 rounded-lg p-2.5 text-xs bg-white text-slate-800 placeholder-slate-400">
+                            <input type="text" id="sitesNewName" placeholder="שם אתר *"
+                                   class="input-base border border-slate-200 rounded-lg p-2.5 text-xs bg-white text-slate-800 placeholder-slate-400">
+                            <input type="text" id="sitesNewRegion" placeholder="חטיבה *"
+                                   class="input-base border border-slate-200 rounded-lg p-2.5 text-xs bg-white text-slate-800 placeholder-slate-400">
+                            <input type="text" id="sitesNewProvider" placeholder="שטח"
+                                   class="input-base border border-slate-200 rounded-lg p-2.5 text-xs bg-white text-slate-800 placeholder-slate-400">
+                            <input type="number" id="sitesNewCams" placeholder="מצלמות" min="0"
+                                   class="input-base border border-slate-200 rounded-lg p-2.5 text-xs bg-white text-slate-800 placeholder-slate-400">
+                            <input type="text" id="sitesNewCoords" placeholder="נ.צ. (קו רוחב, קו אורך)"
+                                   class="input-base border border-slate-200 rounded-lg p-2.5 text-xs bg-white text-slate-800 placeholder-slate-400">
+                            <button type="button" onclick="addSiteManual()"
+                                    class="btn-press bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-lg text-xs font-semibold shadow-sm transition md:col-span-6 lg:col-span-1">
+                                הוסף אתר
+                            </button>
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <span id="sitesCount" class="text-xs font-bold text-slate-700"></span>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <span id="sitesCount" class="text-xs font-bold text-slate-600"></span>
                         <div class="relative sm:w-64">
-                            <i class="fa-solid fa-search absolute right-3 top-3 text-gray-400 text-sm"></i>
-                            <input type="text" id="sitesSearch" oninput="renderSites()" placeholder="חיפוש אתר, חטיבה או שטח..." class="w-full pr-9 pl-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                            <i class="fa-solid fa-search absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input type="text" id="sitesSearch" oninput="renderSites()" placeholder="חיפוש אתר, חטיבה או שטח..."
+                                   class="input-base w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
                         </div>
                     </div>
 
-                    <div class="overflow-auto border border-gray-200 rounded-lg max-h-96">
+                    <div class="overflow-auto border border-slate-200 rounded-xl max-h-96 table-sticky">
                         <table class="w-full text-xs text-right">
-                            <thead class="bg-slate-100 text-slate-600 sticky top-0"><tr><th class="p-2.5 font-semibold">מס''ד</th><th class="p-2.5 font-semibold">שם אתר</th><th class="p-2.5 font-semibold">חטיבה</th><th class="p-2.5 font-semibold">שטח</th><th class="p-2.5 font-semibold">מצלמות</th><th class="p-2.5 font-semibold">נ.צ</th><th class="p-2.5"></th></tr></thead>
+                            <thead class="bg-slate-50 text-slate-600 sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-3 font-semibold">מס״ד</th>
+                                    <th class="p-3 font-semibold">שם אתר</th>
+                                    <th class="p-3 font-semibold">חטיבה</th>
+                                    <th class="p-3 font-semibold">שטח</th>
+                                    <th class="p-3 font-semibold">מצלמות</th>
+                                    <th class="p-3 font-semibold">נ.צ</th>
+                                    <th class="p-3"></th>
+                                </tr>
+                            </thead>
                             <tbody id="sitesBody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Users (admin) -->
-            <div id="viewUsers" class="space-y-4 md:space-y-6 hidden">
-                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+            <!-- ========== Users ========== -->
+            <div id="viewUsers" class="space-y-5 hidden">
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-soft border border-slate-100 space-y-5">
                     <div>
-                        <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">יצירת משתמש חדש</h2>
-                        <p class="text-xs md:text-sm text-gray-500">רק מנהל מערכת יכול ליצור משתמשים. המשתמש יידרש להחליף את הסיסמה הזמנית בכניסה הראשונה.</p>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-900">יצירת משתמש חדש</h2>
+                        <p class="text-xs md:text-sm text-slate-500 mt-0.5">רק מנהל מערכת יכול ליצור משתמשים. המשתמש יידרש להחליף את הסיסמה הזמנית בכניסה הראשונה.</p>
                     </div>
                     <form onsubmit="createManagedUser(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input id="newUserName" required maxlength="100" placeholder="שם מלא" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-                        <input id="newUserEmail" required type="email" placeholder="כתובת אימייל" dir="ltr" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-                        <input id="newUserPassword" required type="text" minlength="8" placeholder="סיסמה זמנית (לפחות 8 תווים)" dir="ltr" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-                        <select id="newUserRole" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"><option value="user">טכנאי</option><option value="admin">מנהל מערכת</option></select>
-                        <button type="submit" class="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 text-sm font-bold">צור משתמש</button>
+                        <input id="newUserName" required maxlength="100" placeholder="שם מלא"
+                               class="input-base border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50">
+                        <input id="newUserEmail" required type="email" placeholder="כתובת אימייל" dir="ltr"
+                               class="input-base border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50">
+                        <input id="newUserPassword" required type="text" minlength="8" placeholder="סיסמה זמנית (לפחות 8 תווים)" dir="ltr"
+                               class="input-base border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50">
+                        <select id="newUserRole" class="input-base border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50">
+                            <option value="user">טכנאי</option>
+                            <option value="admin">מנהל מערכת</option>
+                        </select>
+                        <button type="submit"
+                                class="btn-press md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-3 text-sm font-bold shadow-md shadow-blue-600/20 transition">
+                            צור משתמש
+                        </button>
                     </form>
                 </div>
-                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-soft border border-slate-100 space-y-5">
                     <div>
-                        <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">ניהול משתמשים</h2>
-                        <p class="text-xs md:text-sm text-gray-500">עריכת שם ותפקיד, איפוס סיסמה זמנית וחסימת משתמשים.</p>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-900">ניהול משתמשים</h2>
+                        <p class="text-xs md:text-sm text-slate-500 mt-0.5">עריכת שם ותפקיד, איפוס סיסמה זמנית וחסימת משתמשים.</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="usersCardsContainer"></div>
                 </div>
             </div>
         </main>
 
-        <button type="button" onclick="openDailyModal()" class="fixed bottom-4 left-4 z-40 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl px-5 py-3 flex items-center gap-2 text-sm font-bold transition">
-            <i class="fa-brands fa-whatsapp text-xl"></i><span>סיכום יום</span>
+        <!-- Floating WhatsApp button -->
+        <button type="button" onclick="openDailyModal()"
+                class="btn-press fixed bottom-5 left-5 z-40 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-xl shadow-emerald-600/30 px-5 py-3.5 flex items-center gap-2.5 text-sm font-bold transition">
+            <i class="fa-brands fa-whatsapp text-xl"></i>
+            <span>סיכום יום</span>
         </button>
     </div>
 
-    <!-- Modal: Log columns (admin) -->
-    <div id="logColsModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 md:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b pb-3">
+    <!-- ==================== Modals ==================== -->
+
+    <!-- Log columns -->
+    <div id="logColsModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
+        <div class="modal-panel bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
                 <h3 class="text-base md:text-lg font-bold text-slate-900">בחירת עמודות ליומן</h3>
-                <button type="button" onclick="closeModal('logColsModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="closeModal('logColsModal')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
-            <p class="text-xs text-gray-500">העמודות שתסמן יוצגו ביומן ויופיעו גם בקובץ ה-Excel. הבחירה נשמרת בדפדפן הזה.</p>
+            <p class="text-xs text-slate-500 leading-relaxed">העמודות שתסמן יוצגו ביומן ויופיעו גם בקובץ ה-Excel. הבחירה נשמרת בדפדפן הזה.</p>
             <div id="logColsList" class="grid grid-cols-2 gap-1"></div>
             <div class="flex justify-between gap-2 pt-2">
-                <button type="button" onclick="resetLogCols()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium">ברירת מחדל</button>
-                <button type="button" onclick="setAllLogCols()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium">בחר הכל</button>
-                <button type="button" onclick="closeModal('logColsModal')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs font-medium shadow">סגור</button>
+                <button type="button" onclick="resetLogCols()" class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-semibold transition">ברירת מחדל</button>
+                <button type="button" onclick="setAllLogCols()" class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-semibold transition">בחר הכל</button>
+                <button type="button" onclick="closeModal('logColsModal')" class="btn-press bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">סגור</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: New Call (admin) -->
-    <div id="newCallModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-5 md:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b pb-3">
+    <!-- New Call -->
+    <div id="newCallModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
+        <div class="modal-panel bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
                 <h3 class="text-base md:text-lg font-bold text-slate-900">פתיחת קריאת שירות חדשה</h3>
-                <button type="button" onclick="closeModal('newCallModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="closeModal('newCallModal')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
-            <div class="space-y-3 md:space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">שם אתר / מצלמה *</label>
-                        <input type="text" id="newSiteName" list="siteList" oninput="onSiteInput()" autocomplete="off" placeholder="התחל להקליד כדי לבחור מהרשימה" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">שם אתר / מצלמה *</label>
+                        <input type="text" id="newSiteName" list="siteList" oninput="onSiteInput()" autocomplete="off"
+                               placeholder="התחל להקליד כדי לבחור מהרשימה"
+                               class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
                         <datalist id="siteList"></datalist>
                         <p id="siteHint"></p>
-                        <a id="newSiteWazeLink" href="#" target="_blank" rel="noopener noreferrer" class="hidden mt-2 inline-flex items-center gap-2 rounded-lg bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100">
+                        <a id="newSiteWazeLink" href="#" target="_blank" rel="noopener noreferrer"
+                           class="hidden mt-2 inline-flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 border border-cyan-100 transition">
                             <i class="fa-solid fa-location-arrow"></i><span>נווט לאתר באמצעות Waze</span>
                         </a>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">שייך למשתמש (טכנאי) *</label>
-                        <select id="newTechnicianSelect" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></select>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">שייך למשתמש (טכנאי) *</label>
+                        <select id="newTechnicianSelect" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800"></select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">יום לביצוע *</label>
-                        <input type="date" id="newCallDate" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">יום לביצוע *</label>
+                        <input type="date" id="newCallDate" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">דחיפות / יעד</label>
-                        <select id="newPriority" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                            <option value="רגיל">רגיל</option><option value="דחיפות גבוהה">דחיפות גבוהה</option><option value="קריטי">קריטי</option>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">דחיפות / יעד</label>
+                        <select id="newPriority" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
+                            <option value="רגיל">רגיל</option>
+                            <option value="דחיפות גבוהה">דחיפות גבוהה</option>
+                            <option value="קריטי">קריטי</option>
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">חטיבה</label>
-                    <input type="text" id="newRegion" list="regionList" placeholder="לדוגמה: חטיבה מרחבית" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">חטיבה</label>
+                    <input type="text" id="newRegion" list="regionList" placeholder="לדוגמה: חטיבה מרחבית"
+                           class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
                     <datalist id="regionList"></datalist>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">תיאור התקלה *</label>
-                    <textarea id="newProblemDesc" rows="3" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></textarea>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">תיאור התקלה *</label>
+                    <textarea id="newProblemDesc" rows="3"
+                              class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400"></textarea>
                 </div>
-                <div class="flex justify-end space-x-2 space-x-reverse pt-2">
-                    <button type="button" onclick="closeModal('newCallModal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs md:text-sm font-medium">ביטול</button>
-                    <button type="button" onclick="saveNewCall()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs md:text-sm font-medium shadow">שמור קריאה</button>
+                <div class="flex justify-end gap-2.5 pt-1">
+                    <button type="button" onclick="closeModal('newCallModal')"
+                            class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition">ביטול</button>
+                    <button type="button" onclick="saveNewCall()"
+                            class="btn-press bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 transition">שמור קריאה</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Daily WhatsApp Summary -->
-    <div id="dailyModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-5 md:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b pb-3">
+    <!-- Daily WhatsApp Summary -->
+    <div id="dailyModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
+        <div class="modal-panel bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
                 <h3 class="text-base md:text-lg font-bold text-slate-900">סיכום יום לשליחה בוואטסאפ</h3>
-                <button type="button" onclick="closeModal('dailyModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="closeModal('dailyModal')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">תאריך הסיכום</label>
-                <input type="date" id="dailyDate" onchange="renderDailyList()" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">תאריך הסיכום</label>
+                <input type="date" id="dailyDate" onchange="renderDailyList()"
+                       class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
             </div>
             <div class="grid grid-cols-2 gap-3 items-end">
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">מוביל יום</label>
-                    <input type="text" id="dailyLeader" oninput="refreshDailyText()" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">מוביל יום</label>
+                    <input type="text" id="dailyLeader" oninput="refreshDailyText()"
+                           class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
                 </div>
-                <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer pb-2"><input type="checkbox" id="dailyCrane" onchange="refreshDailyText()"> סל מנוף</label>
+                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pb-2.5 font-medium">
+                    <input type="checkbox" id="dailyCrane" onchange="refreshDailyText()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    סל מנוף
+                </label>
             </div>
-            <div class="space-y-1">
-                <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="dailyOnlyHandled" checked onchange="renderDailyList()"> הצג רק קריאות שטופלו (ללא קריאות חדשות שטרם טופלו)</label>
-                <label class="block text-xs font-medium text-gray-700 pt-1">בחר אילו קריאות לכלול בסיכום</label>
-                <div id="dailyList" class="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-1 bg-white"></div>
+            <div class="space-y-1.5">
+                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                    <input type="checkbox" id="dailyOnlyHandled" checked onchange="renderDailyList()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    הצג רק קריאות שטופלו (ללא קריאות חדשות שטרם טופלו)
+                </label>
+                <label class="block text-xs font-semibold text-slate-700 pt-1">בחר אילו קריאות לכלול בסיכום</label>
+                <div id="dailyList" class="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-1.5 bg-slate-50"></div>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">תצוגה מקדימה (אפשר לערוך לפני השליחה)</label>
-                <textarea id="dailyText" rows="12" class="w-full border border-gray-300 rounded-lg p-3 text-xs bg-slate-50 text-gray-800 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">תצוגה מקדימה (אפשר לערוך לפני השליחה)</label>
+                <textarea id="dailyText" rows="12"
+                          class="input-base w-full border border-slate-200 rounded-xl p-3.5 text-xs bg-slate-50 text-slate-800 font-mono leading-relaxed"></textarea>
             </div>
-            <div class="flex justify-end space-x-2 space-x-reverse pt-1">
-                <button type="button" onclick="closeModal('dailyModal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-xs md:text-sm font-medium">סגור</button>
-                <button type="button" onclick="sendDailyWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium flex items-center space-x-1 space-x-reverse shadow"><i class="fa-brands fa-whatsapp"></i><span>שלח בוואטסאפ</span></button>
+            <div class="flex justify-end gap-2.5 pt-1">
+                <button type="button" onclick="closeModal('dailyModal')"
+                        class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition">סגור</button>
+                <button type="button" onclick="sendDailyWhatsApp()"
+                        class="btn-press bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition">
+                    <i class="fa-brands fa-whatsapp"></i><span>שלח בוואטסאפ</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Update/Close Call -->
-    <div id="closeCallModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-5 md:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b pb-3">
+    <!-- Update / Close Call -->
+    <div id="closeCallModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
+        <div class="modal-panel bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
                 <h3 class="text-base md:text-lg font-bold text-slate-900">עדכון וסגירת קריאה</h3>
-                <button type="button" onclick="closeModal('closeCallModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="closeModal('closeCallModal')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
-            <div class="space-y-3 md:space-y-4">
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">תיאור מפורט של ביצוע הטיפול (כל שורה תופיע כנקודה בסיכום) *</label>
-                    <textarea id="solutionDesc" rows="3" placeholder="פרט את הפעולות שבוצעו באתר..." class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></textarea>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">תיאור מפורט של ביצוע הטיפול (כל שורה תופיע כנקודה בסיכום) *</label>
+                    <textarea id="solutionDesc" rows="3" placeholder="פרט את הפעולות שבוצעו באתר..."
+                              class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400"></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">רכיבים שהוחלפו</label>
-                    <input type="text" id="replacedParts" placeholder="לדוגמה: ספק כוח, כבל..." class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">רכיבים שהוחלפו</label>
+                    <input type="text" id="replacedParts" placeholder="לדוגמה: ספק כוח, כבל..."
+                           class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">סטטוס סופי</label>
-                    <select id="finalStatus" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                        <option value="הושלמה">הושלמה בהצלחה</option><option value="בטיפול">נדרש המשך טיפול</option><option value="מבוטלת">מבוטלת</option>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">סטטוס סופי</label>
+                    <select id="finalStatus" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
+                        <option value="הושלמה">הושלמה בהצלחה</option>
+                        <option value="בטיפול">נדרש המשך טיפול</option>
+                        <option value="מבוטלת">מבוטלת</option>
                     </select>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">מצב האתר</label>
-                        <select id="closeSiteOk" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                            <option value="">לא צוין</option><option value="ok">אתר תקין 🟢</option><option value="bad">אתר לא תקין 🔴</option>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">מצב האתר</label>
+                        <select id="closeSiteOk" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
+                            <option value="">לא צוין</option>
+                            <option value="ok">אתר תקין 🟢</option>
+                            <option value="bad">אתר לא תקין 🔴</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">חטיבה</label>
-                        <input type="text" id="closeRegion" list="regionList" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">חטיבה</label>
+                        <input type="text" id="closeRegion" list="regionList"
+                               class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
                     </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div><label class="block text-xs font-medium text-gray-700 mb-1">כתובת IP</label>
-                        <input type="text" id="closeIp" dir="ltr" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></div>
-                    <div class="flex items-center pt-5">
-                        <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeCrane"> נעשה שימוש בסל מנוף</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">כתובת IP</label>
+                        <input type="text" id="closeIp" dir="ltr"
+                               class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
                     </div>
-                    <div><label class="block text-xs font-medium text-gray-700 mb-1">גורם מטפל *</label>
-                        <select id="closeHandler" required class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
+                    <div class="flex items-center pt-6">
+                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                            <input type="checkbox" id="closeCrane" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            נעשה שימוש בסל מנוף
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">גורם מטפל *</label>
+                        <select id="closeHandler" required class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
                             <option value="">בחר גורם מטפל</option>
                             <option value="ית&quot;ד - צוות שטח">ית&quot;ד - צוות שטח</option>
                             <option value="ית&quot;ד - צוות דסק">ית&quot;ד - צוות דסק</option>
                             <option value="חברה אזרחית">חברה אזרחית</option>
-                        </select></div>
+                        </select>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3">
-                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeCheck"> נפתח בצ'ק</label>
-                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closePowerLift"> הרמת חשמל</label>
-                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeLocalReboot"> ריסוט/ריבוט מקומי</label>
-                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeRemoteReboot"> ריבוט מרחוק</label>
-                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer"><input type="checkbox" id="closeSimReplace"> החלפת סים</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 rounded-xl bg-slate-50 p-3.5 border border-slate-100">
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="closeCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> נפתח בצ'ק
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="closePowerLift" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> הרמת חשמל
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="closeLocalReboot" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> ריסוט/ריבוט מקומי
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="closeRemoteReboot" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> ריבוט מרחוק
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="closeSimReplace" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> החלפת סים
+                    </label>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">הערות</label>
-                    <textarea id="closeNotes" rows="2" class="w-full border border-gray-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800"></textarea>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">הערות</label>
+                    <textarea id="closeNotes" rows="2"
+                              class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800"></textarea>
                 </div>
-                <div class="flex flex-wrap justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeModal('closeCallModal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-xs md:text-sm font-medium">ביטול</button>
-                    <button type="button" onclick="sendWhatsAppSummary()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-medium flex items-center space-x-1 space-x-reverse shadow"><i class="fa-brands fa-whatsapp"></i><span>שלח בוואטסאפ</span></button>
-                    <button type="button" onclick="saveCompletedCall()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium shadow">שמור וסגור</button>
+                <div class="flex flex-wrap justify-end gap-2.5 pt-1">
+                    <button type="button" onclick="closeModal('closeCallModal')"
+                            class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition">ביטול</button>
+                    <button type="button" onclick="sendWhatsAppSummary()"
+                            class="btn-press bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition">
+                        <i class="fa-brands fa-whatsapp"></i><span>שלח בוואטסאפ</span>
+                    </button>
+                    <button type="button" onclick="saveCompletedCall()"
+                            class="btn-press bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 transition">שמור וסגור</button>
                 </div>
             </div>
         </div>
@@ -420,6 +767,7 @@
         function authMsg(t, ok) {
             const m = $('authMsg'); m.textContent = t;
             m.className = 'text-sm text-center font-bold ' + (ok ? 'text-emerald-600' : 'text-red-500');
+            m.classList.remove('hidden');
         }
         function setMode() { mode = 'login'; }
         async function submitAuth(e) {
@@ -506,7 +854,7 @@
         }
         const techName = id => (users.find(u => u.id === id) || {}).username || 'לא שויך';
 
-        /* ---------- Operations log (admin only, reads table operations_log) ---------- */
+        /* ---------- Operations log ---------- */
         let logRows = [];
         const LOG_COLUMNS = [
             { key: 'num',       label: 'מס׳ אירוע',      w: 10, on: true,  get: r => r.incident_number ?? '' },
@@ -547,8 +895,8 @@
 
         function openLogColsModal() {
             $('logColsList').innerHTML = LOG_COLUMNS.map(col => `
-                <label class="flex items-center gap-2 text-xs py-1.5 px-2 rounded hover:bg-slate-100 cursor-pointer">
-                    <input type="checkbox" ${logCols.includes(col.key) ? 'checked' : ''} onchange="toggleLogCol('${col.key}', this)"> ${esc(col.label)}
+                <label class="flex items-center gap-2 text-xs py-1.5 px-2 rounded-lg hover:bg-slate-50 cursor-pointer transition">
+                    <input type="checkbox" ${logCols.includes(col.key) ? 'checked' : ''} onchange="toggleLogCol('${col.key}', this)" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> ${esc(col.label)}
                 </label>`).join('');
             $('logColsModal').classList.remove('hidden');
         }
@@ -569,7 +917,7 @@
                 if (error) {
                     console.error(error);
                     $('logHead').innerHTML = '';
-                    $('logBody').innerHTML = `<tr><td class="text-center text-red-500 py-6">לא ניתן לטעון את יומן המבצעים: ${esc(error.message)}</td></tr>`;
+                    $('logBody').innerHTML = `<tr><td class="text-center text-red-500 py-8 text-sm">לא ניתן לטעון את יומן המבצעים: ${esc(error.message)}</td></tr>`;
                     return;
                 }
                 all.push(...data);
@@ -605,15 +953,15 @@
 
             const cell = (col, r) => {
                 const v = esc(col.get(r));
-                if (col.key === 'status') return `<td class="p-2.5"><span class="px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${r["סטטוס"] === 'תקין' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${v}</span></td>`;
+                if (col.key === 'status') return `<td class="p-2.5"><span class="px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap text-[11px] ${r["סטטוס"] === 'תקין' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${v}</span></td>`;
                 if (col.key === 'site') return `<td class="p-2.5 font-bold text-slate-800">${v}</td>`;
                 if (['fault', 'treatment', 'notes', 'handler'].includes(col.key)) return `<td class="p-2.5 min-w-[140px]">${v}</td>`;
                 return `<td class="p-2.5 whitespace-nowrap">${v}</td>`;
             };
-            $('logHead').innerHTML = '<tr>' + cols.map(col => `<th class="p-2.5 font-semibold whitespace-nowrap">${esc(col.label)}</th>`).join('') + '</tr>';
+            $('logHead').innerHTML = '<tr>' + cols.map(col => `<th class="p-2.5 font-semibold whitespace-nowrap text-slate-600">${esc(col.label)}</th>`).join('') + '</tr>';
             $('logBody').innerHTML = list.length
-                ? list.map(r => '<tr class="border-t border-gray-100 hover:bg-slate-50">' + cols.map(col => cell(col, r)).join('') + '</tr>').join('')
-                : `<tr><td colspan="${cols.length}" class="text-center text-gray-400 py-6">אין אירועים מתאימים לסינון</td></tr>`;
+                ? list.map(r => '<tr class="border-t border-slate-100 hover:bg-slate-50/80 transition">' + cols.map(col => cell(col, r)).join('') + '</tr>').join('')
+                : `<tr><td colspan="${cols.length}" class="text-center text-slate-400 py-10 text-sm">אין אירועים מתאימים לסינון</td></tr>`;
         }
         function exportLogExcel() {
             if (!isAdmin()) return;
@@ -650,14 +998,13 @@
             XLSX.writeFile(wb, `יומן_מבצעים_${localToday()}.xlsx`);
         }
 
-        /* ---------- Sites database (admin, reads table sites) ---------- */
-        // `sites` is declared with the other global state variables above.
+        /* ---------- Sites ---------- */
         function setSitesMsg(t, ok) {
             const m = $('sitesMsg'); m.textContent = t;
             m.className = 'text-xs font-bold ' + (ok ? 'text-emerald-600' : 'text-red-500');
+            m.classList.remove('hidden');
         }
         async function loadSites() {
-            // Load site coordinates for all signed-in users so technicians can navigate from the calls board.
             const all = [];
             for (let from = 0; ; from += 1000) {
                 const { data, error } = await sb.from('sites').select('*').order('שם האתר').range(from, from + 999);
@@ -674,17 +1021,17 @@
             const list = sites.filter(s => !q || [s["שם האתר"], s["חטיבה"], s["שטח"]].join(' ').toLowerCase().includes(q));
             $('sitesCount').textContent = `${sites.length} אתרים במאגר` + (q ? ` (נמצאו ${list.length})` : '');
             const rows = list.slice(0, 300).map(s => `
-                <tr class="border-t border-gray-100 hover:bg-slate-50">
-                    <td class="p-2.5 text-gray-500">${esc(s['מס""ד'])}</td>
+                <tr class="border-t border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="p-2.5 text-slate-500">${esc(s['מס""ד'])}</td>
                     <td class="p-2.5 font-bold text-slate-800">${esc(s["שם האתר"])}</td>
                     <td class="p-2.5">${esc(s["חטיבה"] || '')}</td>
                     <td class="p-2.5">${esc(s["שטח"] || '')}</td>
                     <td class="p-2.5">${esc(s["מס' מצלמות"] ?? '')}</td>
                     <td class="p-2.5">${esc(s["נ.צ"] || '')}</td>
-                    <td class="p-2.5 text-left"><button type="button" onclick="deleteSite(${s['מס""ד']})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td>
+                    <td class="p-2.5 text-left"><button type="button" onclick="deleteSite(${s['מס""ד']})" class="text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`).join('');
-            $('sitesBody').innerHTML = (rows || '<tr><td colspan="7" class="text-center text-gray-400 py-6">אין אתרים להצגה</td></tr>')
-                + (list.length > 300 ? '<tr><td colspan="7" class="text-center text-gray-400 py-2">מוצגים 300 הראשונים. השתמש בחיפוש כדי לצמצם</td></tr>' : '');
+            $('sitesBody').innerHTML = (rows || '<tr><td colspan="7" class="text-center text-slate-400 py-10 text-sm">אין אתרים להצגה</td></tr>')
+                + (list.length > 300 ? '<tr><td colspan="7" class="text-center text-slate-400 py-2 text-xs">מוצגים 300 הראשונים. השתמש בחיפוש כדי לצמצם</td></tr>' : '');
         }
         async function addSiteManual() {
             const site_id_val = parseInt($('sitesNewId').value);
@@ -699,7 +1046,7 @@
 
             const { error } = await sb.from('sites').insert({
                 'מס""ד': site_id_val,
-                '2לא רלוונטי': site_id_val, // במידה והשדה דורש ערך ייחודי לפי המבנה שלך
+                '2לא רלוונטי': site_id_val,
                 'שם האתר': site_name,
                 'חטיבה': region,
                 'שטח': provider,
@@ -719,8 +1066,6 @@
         }
         function getWazeUrlFromCoordinates(rawCoordinates) {
             if (!rawCoordinates) return null;
-            // Supports decimal coordinates such as "31.12345, 34.12345" or "31.12345 34.12345".
-            // Israeli grid / UTM coordinates are not valid Waze lat-long values and are rejected.
             const numbers = String(rawCoordinates).trim().match(/[-+]?\d+(?:\.\d+)?/g);
             if (!numbers || numbers.length !== 2) return null;
             const lat = Number(numbers[0]);
@@ -737,31 +1082,44 @@
             if (s) {
                 if (s["חטיבה"]) $('newRegion').value = s["חטיבה"];
                 hint.textContent = `נמצא במאגר${s["שטח"] ? ' · שטח: ' + s["שטח"] : ''}${s["מס' מצלמות"] ? ' · ' + s["מס' מצלמות"] + ' מצלמות' : ''}`;
-                hint.className = 'text-[11px] text-emerald-600 mt-1';
+                hint.className = 'text-[11px] text-emerald-600 mt-1.5 font-medium';
                 const url = getWazeUrlFromCoordinates(s["נ.צ"]);
                 if (url) {
                     wazeLink.href = url;
                     wazeLink.classList.remove('hidden');
                 } else if (s["נ.צ"]) {
-                    hint.textContent += ' · הנ.צ קיים אך אינו בפורמט קואורדינטות עשרוניות (קו רוחב, קו אורך), ולכן לא נוצר קישור Waze';
+                    hint.textContent += ' · הנ.צ קיים אך אינו בפורמט קואורדינטות עשרוניות';
                 } else {
                     hint.textContent += ' · לא הוזן נ.צ לאתר';
                 }
             } else {
                 hint.textContent = v ? 'האתר לא במאגר. יש לבחור אתר מהרשימה' : '';
-                hint.className = 'text-[11px] text-amber-600 mt-1';
+                hint.className = 'text-[11px] text-amber-600 mt-1.5 font-medium';
             }
         }
 
         /* ---------- Tabs / filters ---------- */
         function switchTab(tab) {
             if ((tab === 'log' || tab === 'sites') && !isAdmin()) tab = 'board';
-            const on = "py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-blue-500 text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap";
-            const off = "py-2.5 md:py-3 px-3 md:px-4 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-xs md:text-sm flex items-center space-x-2 space-x-reverse whitespace-nowrap";
-            $('tabBoard').className = tab === 'board' ? on : off;
-            $('tabUsers').className = (tab === 'users' ? on : off) + (isAdmin() ? '' : ' hidden');
-            $('tabLog').className = (tab === 'log' ? on : off) + (isAdmin() ? '' : ' hidden');
-            $('tabSites').className = (tab === 'sites' ? on : off) + (isAdmin() ? '' : ' hidden');
+            const tabs = ['Board', 'Log', 'Sites', 'Users'];
+            tabs.forEach(t => {
+                const el = $(`tab${t}`);
+                if (!el) return;
+                const isActive = (tab === t.toLowerCase());
+                el.classList.toggle('active', isActive);
+                el.classList.toggle('text-white', isActive);
+                el.classList.toggle('text-slate-400', !isActive);
+            });
+            if (!isAdmin()) {
+                $('tabLog').classList.add('hidden');
+                $('tabSites').classList.add('hidden');
+                $('tabUsers').classList.add('hidden');
+            } else {
+                $('tabLog').classList.remove('hidden');
+                $('tabSites').classList.remove('hidden');
+                $('tabUsers').classList.remove('hidden');
+                $('tabUsers').classList.add('flex');
+            }
             $('viewSites').classList.toggle('hidden', tab !== 'sites');
             if (tab === 'sites') renderSites();
             $('viewLog').classList.toggle('hidden', tab !== 'log');
@@ -774,8 +1132,12 @@
         function setCategoryFilter(cat) {
             currentCategoryFilter = cat;
             ['ALL', 'OPEN', 'RESOLVED', 'FUTURE'].forEach(c => {
-                $(`catBtn_${c}`).className = "p-3 rounded-xl font-medium text-xs md:text-sm flex items-center justify-center space-x-2 space-x-reverse transition shadow-sm " +
-                    (c === cat ? "bg-blue-600 text-white" : "bg-white text-slate-700 border border-gray-200 hover:bg-slate-50");
+                const el = $(`catBtn_${c}`);
+                const isActive = c === cat;
+                el.className = "cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 transition shadow-soft " +
+                    (isActive
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50");
             });
             renderCalls();
         }
@@ -801,7 +1163,13 @@
             });
 
             if (!filtered.length) {
-                container.innerHTML = `<div class="bg-white p-8 text-center rounded-xl border border-gray-200 text-gray-400 text-sm">${isAdmin() ? 'לא נמצאו קריאות שירות מתאימות לקטגוריה זו' : 'אין קריאות פתוחות המשויכות אליך כרגע'}</div>`;
+                container.innerHTML = `
+                    <div class="bg-white p-12 text-center rounded-2xl border border-slate-100 shadow-soft">
+                        <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 text-xl">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                        </div>
+                        <p class="text-slate-500 text-sm font-medium">${isAdmin() ? 'לא נמצאו קריאות שירות מתאימות לקטגוריה זו' : 'אין קריאות פתוחות המשויכות אליך כרגע'}</p>
+                    </div>`;
                 return;
             }
 
@@ -810,54 +1178,69 @@
 
             container.innerHTML = Object.keys(grouped).sort().map(dateStr => {
                 const cards = grouped[dateStr].map(c => {
-                    let badge = 'bg-blue-100 text-blue-700';
-                    if (c.status === 'הושלמה') badge = 'bg-emerald-100 text-emerald-700';
-                    if (c.status === 'בטיפול') badge = 'bg-amber-100 text-amber-700';
-                    if (c.status === 'מבוטלת') badge = 'bg-red-100 text-red-700';
+                    let badge = 'bg-blue-50 text-blue-700 border-blue-100';
+                    let badgeIcon = 'fa-circle';
+                    if (c.status === 'הושלמה') { badge = 'bg-emerald-50 text-emerald-700 border-emerald-100'; badgeIcon = 'fa-check'; }
+                    if (c.status === 'בטיפול') { badge = 'bg-amber-50 text-amber-700 border-amber-100 status-open'; badgeIcon = 'fa-spinner'; }
+                    if (c.status === 'מבוטלת') { badge = 'bg-red-50 text-red-700 border-red-100'; badgeIcon = 'fa-xmark'; }
+                    if (c.status === 'חדשה') { badge = 'bg-blue-50 text-blue-700 border-blue-100 status-open'; badgeIcon = 'fa-plus'; }
+
+                    const priorityColor = c.priority === 'קריטי' ? 'text-red-600 font-bold' :
+                                          c.priority === 'דחיפות גבוהה' ? 'text-amber-600 font-semibold' : 'text-slate-600';
+
                     return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between space-y-3 hover:shadow-md transition">
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-start">
-                                <span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">C-${c.id}</span>
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge}">${esc(c.status)}</span>
+                    <div class="card-lift bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-between space-y-3">
+                        <div class="space-y-2.5">
+                            <div class="flex justify-between items-start gap-2">
+                                <span class="font-mono text-[11px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">C-${c.id}</span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${badge} flex items-center gap-1">
+                                    <i class="fa-solid ${badgeIcon} text-[9px]"></i>${esc(c.status)}
+                                </span>
                             </div>
                             <div>
-                                <h4 class="font-bold text-slate-900 text-base">${esc(c.site_name)}</h4>
-                                <p class="text-xs text-blue-600 font-medium">טכנאי אחראי: ${esc(techName(c.assigned_to))}</p>
+                                <h4 class="font-bold text-slate-900 text-base leading-snug">${esc(c.site_name)}</h4>
+                                <p class="text-xs text-blue-600 font-medium mt-0.5">טכנאי: ${esc(techName(c.assigned_to))}</p>
                                 ${(() => {
                                     const site = sites.find(x => String(x["שם האתר"] || '').trim() === String(c.site_name || '').trim());
                                     const wazeUrl = site ? getWazeUrlFromCoordinates(site["נ.צ"]) : null;
                                     return wazeUrl
-                                        ? `<a href="${wazeUrl}" target="_blank" rel="noopener noreferrer" aria-label="נווט לאתר ${esc(c.site_name)} באמצעות Waze" class="inline-flex items-center gap-2 mt-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 px-3 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-brands fa-waze text-base"></i><span>נווט ב-Waze</span></a>`
-                                        : `<span class="inline-flex items-center gap-1 mt-2 text-[11px] text-gray-400"><i class="fa-solid fa-location-dot"></i> ${site ? 'לא הוגדר נ.צ תקין לאתר' : 'האתר לא נמצא במאגר האתרים'}</span>`;
+                                        ? `<a href="${wazeUrl}" target="_blank" rel="noopener noreferrer" aria-label="נווט לאתר ${esc(c.site_name)} באמצעות Waze" class="inline-flex items-center gap-1.5 mt-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-100 px-2.5 py-1 rounded-lg text-[11px] font-bold transition"><i class="fa-brands fa-waze"></i><span>נווט ב-Waze</span></a>`
+                                        : `<span class="inline-flex items-center gap-1 mt-2 text-[11px] text-slate-400"><i class="fa-solid fa-location-dot"></i> ${site ? 'לא הוגדר נ.צ תקין' : 'האתר לא במאגר'}</span>`;
                                 })()}
                             </div>
-                            <div class="bg-slate-50 p-2.5 rounded-lg border border-gray-100 text-xs text-slate-700">
-                                <span class="font-bold text-slate-900 block mb-1">תקלה:</span>${esc(c.problem)}
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-700 leading-relaxed">
+                                <span class="font-bold text-slate-500 block mb-0.5 text-[10px] uppercase tracking-wide">תקלה</span>
+                                ${esc(c.problem)}
                             </div>
-                            ${c.solution ? `<div class="bg-emerald-50 p-2 rounded text-xs text-emerald-800"><b>פתרון:</b> ${esc(c.solution)}</div>` : ''}
+                            ${c.solution ? `<div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 text-xs text-emerald-800 leading-relaxed"><span class="font-bold text-emerald-600 block mb-0.5 text-[10px] uppercase tracking-wide">פתרון</span>${esc(c.solution)}</div>` : ''}
                         </div>
-                        <div class="flex justify-between items-center pt-2 border-t border-gray-100 text-xs">
-                            <span class="text-gray-400 font-medium">יעד: <b class="text-slate-600">${esc(c.priority)}</b></span>
-                            <div class="flex gap-2">
-                                <button type="button" onclick="openCloseModal(${c.id})" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i><span>עדכן</span></button>
-                                ${isAdmin() ? `<button type="button" onclick="deleteCall(${c.id})" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-1.5 rounded-lg transition"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        <div class="flex justify-between items-center pt-2.5 border-t border-slate-100 text-xs">
+                            <span class="text-slate-400">יעד: <b class="${priorityColor}">${esc(c.priority)}</b></span>
+                            <div class="flex gap-1.5">
+                                <button type="button" onclick="openCloseModal(${c.id})"
+                                        class="btn-press bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 border border-blue-100 hover:border-blue-600">
+                                    <i class="fa-solid fa-pen-to-square text-[11px]"></i><span>עדכן</span>
+                                </button>
+                                ${isAdmin() ? `<button type="button" onclick="deleteCall(${c.id})" class="btn-press bg-red-50 text-red-500 hover:bg-red-600 hover:text-white p-1.5 rounded-lg transition border border-red-100 hover:border-red-600"><i class="fa-solid fa-trash text-[11px]"></i></button>` : ''}
                             </div>
                         </div>
                     </div>`;
                 }).join('');
                 return `
                 <div class="space-y-3">
-                    <div class="flex items-center gap-2 border-r-4 border-blue-600 pr-3 py-1.5 bg-slate-200/70 rounded-l-lg shadow-sm">
-                        <i class="fa-solid fa-calendar-day text-blue-600 text-sm"></i>
-                        <h3 class="font-bold text-slate-800 text-sm md:text-base">${formatDateHebrew(dateStr)} (${grouped[dateStr].length} קריאות)</h3>
+                    <div class="flex items-center gap-2.5 bg-white border border-slate-100 rounded-xl px-4 py-2.5 shadow-soft">
+                        <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-calendar-day text-sm"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm md:text-base">${formatDateHebrew(dateStr)}</h3>
+                        <span class="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">${grouped[dateStr].length} קריאות</span>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">${cards}</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">${cards}</div>
                 </div>`;
             }).join('');
         }
 
-        /* ---------- New call (admin) ---------- */
+        /* ---------- New call ---------- */
         function openNewCallModal() {
             const techs = users.filter(u => u.approved && u.role === 'user');
             if (!techs.length) return alert('אין עדיין משתמשים רגילים מאושרים לשיוך קריאה. אשר משתמש בלשונית ניהול משתמשים.');
@@ -889,7 +1272,7 @@
             $('solutionDesc').value = activeCall.solution || '';
             $('replacedParts').value = activeCall.parts || '';
             $('finalStatus').value = activeCall.status === 'חדשה' ? 'הושלמה' : activeCall.status;
-            $('closeSiteOk').value = activeCall.site_ok === false ? 'bad' : 'ok';
+            $('closeSiteOk').value = activeCall.site_ok === false ? 'bad' : (activeCall.site_ok === true ? 'ok' : '');
             $('closeIp').value = activeCall.ip_address || '';
             $('closeCrane').checked = !!activeCall.crane_used;
             $('closePowerLift').checked = !!activeCall.power_lift;
@@ -942,7 +1325,7 @@
             loadCalls();
         }
 
-        /* ---------- Users management (admin) ---------- */
+        /* ---------- Users management ---------- */
         async function createManagedUser(e) {
             e.preventDefault();
             if (!isAdmin()) return alert('אין הרשאה לבצע פעולה זו');
@@ -965,27 +1348,29 @@
                 const self = u.id === me.id;
                 const active = u.is_active !== false;
                 const status = !active
-                    ? '<span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">חסום</span>'
-                    : u.approved ? '<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">פעיל</span>' : '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">ממתין לאישור</span>';
+                    ? '<span class="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-semibold border border-red-100">חסום</span>'
+                    : u.approved
+                        ? '<span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold border border-emerald-100">פעיל</span>'
+                        : '<span class="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold border border-amber-100">ממתין לאישור</span>';
                 return `
-                <div class="bg-slate-50 p-4 rounded-xl border ${active ? 'border-gray-200' : 'border-red-300'} space-y-3">
+                <div class="bg-slate-50 p-4 rounded-2xl border ${active ? 'border-slate-100' : 'border-red-200'} space-y-3">
                     <div class="flex items-center justify-between gap-2">
                         <div class="min-w-0 flex-1">
-                            <h4 class="font-bold text-slate-800 text-sm">${esc(u.username)}${self ? ' (אני)' : ''}</h4>
-                            <p class="text-xs text-gray-500">${ROLE[u.role] || 'טכנאי'} · ${status}</p>
+                            <h4 class="font-bold text-slate-800 text-sm">${esc(u.username)}${self ? ' <span class="text-slate-400 font-normal">(אני)</span>' : ''}</h4>
+                            <p class="text-xs text-slate-500 mt-0.5">${ROLE[u.role] || 'טכנאי'} · ${status}</p>
                         </div>
                     </div>
-                    ${self ? '<p class="text-xs text-gray-500">לא ניתן לערוך או לחסום את המשתמש המחובר.</p>' : `
+                    ${self ? '<p class="text-xs text-slate-400">לא ניתן לערוך או לחסום את המשתמש המחובר.</p>' : `
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input id="name_${u.id}" value="${esc(u.username)}" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white" placeholder="שם מלא">
-                        <select id="role_${u.id}" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+                        <input id="name_${u.id}" value="${esc(u.username)}" class="input-base border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white" placeholder="שם מלא">
+                        <select id="role_${u.id}" class="input-base border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white">
                             <option value="user" ${u.role === 'user' ? 'selected' : ''}>טכנאי</option>
                             <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>מנהל מערכת</option>
                         </select>
-                        <button type="button" onclick="saveUserDetails('${u.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-medium">שמור פרטים</button>
-                        <button type="button" onclick="resetUserPassword('${u.id}')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-2 rounded-lg text-xs font-medium">אפס סיסמה זמנית</button>
-                        <button type="button" onclick="toggleUserActive('${u.id}', ${!active})" class="${active ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'} px-3 py-2 rounded-lg text-xs font-medium">${active ? 'חסום משתמש' : 'הפעל משתמש'}</button>
-                        <button type="button" onclick="deleteUser('${u.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-xs font-medium">מחק משתמש</button>
+                        <button type="button" onclick="saveUserDetails('${u.id}')" class="btn-press bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition">שמור פרטים</button>
+                        <button type="button" onclick="resetUserPassword('${u.id}')" class="btn-press bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-2 rounded-lg text-xs font-semibold border border-amber-100 transition">אפס סיסמה</button>
+                        <button type="button" onclick="toggleUserActive('${u.id}', ${!active})" class="btn-press ${active ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-100' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-100'} px-3 py-2 rounded-lg text-xs font-semibold border transition">${active ? 'חסום משתמש' : 'הפעל משתמש'}</button>
+                        <button type="button" onclick="deleteUser('${u.id}')" class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold transition">מחק משתמש</button>
                     </div>`}
                 </div>`;
             }).join('');
@@ -1052,10 +1437,10 @@
         function renderDailyList() {
             const list = dailyCandidates();
             $('dailyList').innerHTML = list.length
-                ? list.map(c => `<label class="flex items-center gap-2 text-xs py-1.5 px-2 rounded hover:bg-slate-100 cursor-pointer">
-                        <input type="checkbox" class="dailyChk" value="${c.id}" checked onchange="refreshDailyText()">
-                        <span class="font-bold">${esc(c.site_name)}</span><span class="text-gray-400">(${esc(c.status)})</span></label>`).join('')
-                : '<div class="text-xs text-gray-400 py-2 px-2">אין קריאות מתאימות בתאריך זה</div>';
+                ? list.map(c => `<label class="flex items-center gap-2 text-xs py-1.5 px-2.5 rounded-lg hover:bg-white cursor-pointer transition">
+                        <input type="checkbox" class="dailyChk rounded border-slate-300 text-blue-600 focus:ring-blue-500" value="${c.id}" checked onchange="refreshDailyText()">
+                        <span class="font-bold text-slate-800">${esc(c.site_name)}</span><span class="text-slate-400">(${esc(c.status)})</span></label>`).join('')
+                : '<div class="text-xs text-slate-400 py-3 px-2.5 text-center">אין קריאות מתאימות בתאריך זה</div>';
             refreshDailyText();
         }
         function selectedDailyCalls() {
@@ -1093,7 +1478,11 @@
         function toast(t) {
             $('toastText').textContent = t;
             $('toast').classList.remove('hidden');
-            setTimeout(() => $('toast').classList.add('hidden'), 7000);
+            $('toast').classList.add('show');
+            setTimeout(() => {
+                $('toast').classList.add('hidden');
+                $('toast').classList.remove('show');
+            }, 7000);
         }
         // חזרה מקישור האימות במייל
         const justConfirmed = /type=(signup|email)/.test(location.hash);

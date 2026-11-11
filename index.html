@@ -19,7 +19,7 @@
         <i class="fa-solid fa-circle-check ml-2"></i><span id="toastText"></span>
     </div>
 
-    <!-- Auth Screen: login / register / pending -->
+    <!-- Auth Screen: login / pending -->
     <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-5">
             <div class="text-center">
@@ -29,20 +29,6 @@
             </div>
 
             <form id="authForm" onsubmit="submitAuth(event)" class="space-y-4">
-                <div id="regFields" class="space-y-4 hidden">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">שם מלא / שם משתמש</label>
-                        <input type="text" id="regUser" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right bg-white text-gray-800">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">סוג משתמש מבוקש</label>
-                        <select id="regRole" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-800">
-                            <option value="user">משתמש רגיל (טכנאי)</option>
-                            <option value="admin">מנהל מערכת</option>
-                        </select>
-                        <p class="text-[11px] text-gray-400 mt-1">החשבון יופעל רק לאחר אישור מנהל המערכת</p>
-                    </div>
-                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
                     <input type="email" id="authEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right bg-white text-gray-800" dir="ltr">
@@ -53,7 +39,6 @@
                 </div>
                 <div id="authMsg" class="text-sm text-center hidden font-bold"></div>
                 <button type="submit" id="authBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-md">כניסה למערכת</button>
-                <button type="button" id="toggleMode" onclick="setMode(mode==='login'?'register':'login')" class="w-full text-sm text-blue-600 hover:underline">אין לך משתמש? הירשם</button>
             </form>
 
             <div id="pendingBox" class="hidden text-center space-y-4">
@@ -218,8 +203,21 @@
             <div id="viewUsers" class="space-y-4 md:space-y-6 hidden">
                 <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
                     <div>
-                        <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">ניהול ואישור משתמשים</h2>
-                        <p class="text-xs md:text-sm text-gray-500">אשר משתמשים חדשים, קבע הרשאה (מנהל / משתמש רגיל) וחסום גישה</p>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">יצירת משתמש חדש</h2>
+                        <p class="text-xs md:text-sm text-gray-500">רק מנהל מערכת יכול ליצור משתמשים. המשתמש יידרש להחליף את הסיסמה הזמנית בכניסה הראשונה.</p>
+                    </div>
+                    <form onsubmit="createManagedUser(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="newUserName" required maxlength="100" placeholder="שם מלא" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                        <input id="newUserEmail" required type="email" placeholder="כתובת אימייל" dir="ltr" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                        <input id="newUserPassword" required type="text" minlength="8" placeholder="סיסמה זמנית (לפחות 8 תווים)" dir="ltr" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                        <select id="newUserRole" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"><option value="user">טכנאי</option><option value="admin">מנהל מערכת</option></select>
+                        <button type="submit" class="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 text-sm font-bold">צור משתמש</button>
+                    </form>
+                </div>
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-1">ניהול משתמשים</h2>
+                        <p class="text-xs md:text-sm text-gray-500">עריכת שם ותפקיד, איפוס סיסמה זמנית וחסימת משתמשים.</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="usersCardsContainer"></div>
                 </div>
@@ -415,7 +413,7 @@
 
         const $ = id => document.getElementById(id);
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        const ROLE = { admin: 'מנהל מערכת', user: 'משתמש רגיל' };
+        const ROLE = { admin: 'מנהל מערכת', user: 'טכנאי' };
 
         let me = null, calls = [], users = [], sites = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
         const isAdmin = () => me && me.role === 'admin';
@@ -425,31 +423,14 @@
             const m = $('authMsg'); m.textContent = t;
             m.className = 'text-sm text-center font-bold ' + (ok ? 'text-emerald-600' : 'text-red-500');
         }
-        function setMode(m) {
-            mode = m;
-            $('regFields').classList.toggle('hidden', m !== 'register');
-            $('authBtn').textContent = m === 'login' ? 'כניסה למערכת' : 'הרשמה';
-            $('toggleMode').textContent = m === 'login' ? 'אין לך משתמש? הירשם' : 'יש לך משתמש? התחבר';
-            $('authSub').textContent = m === 'login' ? 'התחבר למערכת עם פרטי המשתמש שלך' : 'צור משתמש חדש. הגישה תופעל לאחר אישור מנהל';
-            $('authMsg').classList.add('hidden');
-        }
+        function setMode() { mode = 'login'; }
         async function submitAuth(e) {
             e.preventDefault();
             if (!sb) return authMsg(CONFIG_ERR);
             const email = $('authEmail').value.trim(), password = $('authPass').value;
-            if (mode === 'login') {
-                const { error } = await sb.auth.signInWithPassword({ email, password });
-                if (error) return authMsg(/not confirmed/i.test(error.message) ? 'יש לאשר קודם את כתובת האימייל בקישור שנשלח אליך' : 'אימייל או סיסמה שגויים');
-                await boot();
-            } else {
-                const username = $('regUser').value.trim();
-                if (!username) return authMsg('נא להזין שם');
-                const { error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname, data: { username, requested_role: $('regRole').value } } });
-                if (error) return authMsg(error.message);
-                await sb.auth.signOut();
-                setMode('login');
-                authMsg('ההרשמה נקלטה! שלחנו אליך מייל, יש ללחוץ על הקישור בו כדי לאשר את הכתובת. לאחר מכן ניתן להיכנס, והגישה תופעל כשמנהל המערכת יאשר אותך', true);
-            }
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) return authMsg(/not confirmed/i.test(error.message) ? 'יש לאשר קודם את כתובת האימייל בקישור שנשלח אליך' : 'אימייל או סיסמה שגויים');
+            await boot();
         }
         async function logout() {
             if (channel) { sb.removeChannel(channel); channel = null; }
@@ -460,23 +441,41 @@
             $('pendingBox').classList.add('hidden');
             $('authForm').classList.remove('hidden');
             $('authPass').value = '';
-            setMode('login');
+            setMode();
         }
         async function boot() {
             if (!sb) return authMsg(CONFIG_ERR);
             const { data: { session } } = await sb.auth.getSession();
             if (!session) return;
-            const { data: p } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-            if (!p) { await logout(); return authMsg('המשתמש לא נמצא'); }
+            const { data: p, error: profileLoadError } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+            if (profileLoadError || !p) { await logout(); return authMsg('המשתמש לא נמצא'); }
             me = p;
-            if (!p.approved) {
+            if (p.is_active === false || !p.approved) {
+                $('appContainer').classList.add('hidden');
+                $('authScreen').classList.remove('hidden');
                 $('authForm').classList.add('hidden');
                 $('pendingBox').classList.remove('hidden');
+                $('pendingBox').querySelector('h2').textContent = p.is_active === false ? 'החשבון חסום' : 'החשבון ממתין לאישור מנהל';
+                $('pendingBox').querySelector('p').textContent = p.is_active === false ? 'הגישה למערכת נחסמה. יש לפנות למנהל המערכת.' : 'מנהל המערכת צריך לאשר את המשתמש שלך לפני הכניסה.';
                 return;
             }
+            if (p.must_change_password) {
+                const newPassword = prompt('זו כניסתך הראשונה או שאופסה לך הסיסמה. נא לבחור סיסמה חדשה (לפחות 8 תווים):');
+                if (newPassword === null) { await logout(); return; }
+                if (newPassword.length < 8) { alert('הסיסמה חייבת להכיל לפחות 8 תווים.'); await logout(); return; }
+                const confirmPassword = prompt('הקלד שוב את הסיסמה החדשה לאימות:');
+                if (confirmPassword !== newPassword) { alert('הסיסמאות אינן תואמות. התחבר שוב ונסה שנית.'); await logout(); return; }
+                const { data: changeData, error: changeError } = await sb.functions.invoke('admin-users', { body: { action: 'change_password', new_password: newPassword } });
+                if (changeError || changeData?.error) { alert('לא ניתן לשנות סיסמה: ' + (changeData?.error || changeError.message)); await logout(); return; }
+                alert('הסיסמה עודכנה בהצלחה.');
+                const { data: refreshed } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+                if (refreshed) me = refreshed;
+            }
+            $('authForm').classList.remove('hidden');
+            $('pendingBox').classList.add('hidden');
             $('authScreen').classList.add('hidden');
             $('appContainer').classList.remove('hidden');
-            $('userInfoDisplay').innerText = `${me.username} (${ROLE[me.role]})`;
+            $('userInfoDisplay').innerText = `${me.username} (${ROLE[me.role] || 'טכנאי'})`;
             $('tabBoardLabel').innerText = isAdmin() ? 'לוח קריאות (לפי ימים)' : 'הקריאות שלי';
             $('tabUsers').classList.toggle('hidden', !isAdmin());
             if (isAdmin()) $('tabUsers').classList.add('flex');
@@ -946,43 +945,73 @@
         }
 
         /* ---------- Users management (admin) ---------- */
+        async function createManagedUser(e) {
+            e.preventDefault();
+            if (!isAdmin()) return alert('אין הרשאה לבצע פעולה זו');
+            const payload = {
+                action: 'create',
+                full_name: $('newUserName').value.trim(),
+                email: $('newUserEmail').value.trim(),
+                temp_password: $('newUserPassword').value,
+                role: $('newUserRole').value
+            };
+            const { data, error } = await sb.functions.invoke('admin-users', { body: payload });
+            if (error || data?.error) return alert('יצירת המשתמש נכשלה: ' + (data?.error || error.message));
+            alert('המשתמש נוצר בהצלחה. יש למסור לו את כתובת האימייל והסיסמה הזמנית שהזנת.');
+            $('newUserName').value = ''; $('newUserEmail').value = ''; $('newUserPassword').value = ''; $('newUserRole').value = 'user';
+            await loadUsers(); renderUsers();
+        }
         function renderUsers() {
-            const sorted = [...users].sort((a, b) => a.approved - b.approved);
+            const sorted = [...users].sort((a, b) => (a.is_active === false) - (b.is_active === false) || String(a.username).localeCompare(String(b.username), 'he'));
             $('usersCardsContainer').innerHTML = sorted.map(u => {
                 const self = u.id === me.id;
-                const status = u.approved
-                    ? '<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">מאושר</span>'
-                    : '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">ממתין לאישור</span>';
+                const active = u.is_active !== false;
+                const status = !active
+                    ? '<span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">חסום</span>'
+                    : u.approved ? '<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">פעיל</span>' : '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">ממתין לאישור</span>';
                 return `
-                <div class="bg-slate-50 p-4 rounded-xl border ${u.approved ? 'border-gray-200' : 'border-amber-300'} space-y-3">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-2 space-x-reverse">
-                            <div class="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm">${esc(u.username.charAt(0).toUpperCase())}</div>
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-sm">${esc(u.username)}${self ? ' (אני)' : ''}</h4>
-                                <p class="text-xs text-gray-500">ביקש: ${ROLE[u.requested_role]}</p>
-                            </div>
+                <div class="bg-slate-50 p-4 rounded-xl border ${active ? 'border-gray-200' : 'border-red-300'} space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <h4 class="font-bold text-slate-800 text-sm">${esc(u.username)}${self ? ' (אני)' : ''}</h4>
+                            <p class="text-xs text-gray-500">${ROLE[u.role] || 'טכנאי'} · ${status}</p>
                         </div>
-                        ${status}
                     </div>
-                    ${self ? '' : `
-                    <div class="flex gap-2">
-                        <select id="role_${u.id}" class="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white text-gray-800">
-                            <option value="user" ${u.role === 'user' ? 'selected' : ''}>משתמש רגיל</option>
+                    ${self ? '<p class="text-xs text-gray-500">לא ניתן לערוך או לחסום את המשתמש המחובר.</p>' : `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input id="name_${u.id}" value="${esc(u.username)}" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white" placeholder="שם מלא">
+                        <select id="role_${u.id}" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+                            <option value="user" ${u.role === 'user' ? 'selected' : ''}>טכנאי</option>
                             <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>מנהל מערכת</option>
                         </select>
-                        <button type="button" onclick="setApproval('${u.id}', true)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">${u.approved ? 'עדכן הרשאה' : 'אשר'}</button>
-                        ${u.approved ? `<button type="button" onclick="setApproval('${u.id}', false)" class="bg-red-50 hover:bg-red-600 hover:text-white text-red-600 px-3 py-1.5 rounded-lg text-xs font-medium transition">חסום</button>` : ''}
-                        <button type="button" onclick="deleteUser('${u.id}')" title="מחק משתמש" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" onclick="saveUserDetails('${u.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-medium">שמור פרטים</button>
+                        <button type="button" onclick="resetUserPassword('${u.id}')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-2 rounded-lg text-xs font-medium">אפס סיסמה זמנית</button>
+                        <button type="button" onclick="toggleUserActive('${u.id}', ${!active})" class="${active ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'} px-3 py-2 rounded-lg text-xs font-medium">${active ? 'חסום משתמש' : 'הפעל משתמש'}</button>
+                        <button type="button" onclick="deleteUser('${u.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-xs font-medium">מחק משתמש</button>
                     </div>`}
                 </div>`;
             }).join('');
         }
-        async function setApproval(id, approved) {
-            const patch = { approved };
-            if (approved) patch.role = $('role_' + id).value;
-            const { error } = await sb.from('profiles').update(patch).eq('id', id);
-            if (error) return alert('שגיאה: ' + error.message);
+        async function saveUserDetails(id) {
+            if (!isAdmin()) return;
+            const username = $('name_' + id).value.trim(), role = $('role_' + id).value;
+            if (!username) return alert('יש להזין שם מלא');
+            const { error } = await sb.from('profiles').update({ username, requested_role: role, role }).eq('id', id);
+            if (error) return alert('שגיאה בשמירת הפרטים: ' + error.message);
+            await loadUsers(); renderUsers(); alert('פרטי המשתמש עודכנו.');
+        }
+        async function resetUserPassword(id) {
+            if (!isAdmin() || !confirm('לאפס את סיסמת המשתמש? תיווצר סיסמה זמנית חדשה שתוצג לך.')) return;
+            const { data, error } = await sb.functions.invoke('admin-users', { body: { action: 'reset_password', user_id: id } });
+            if (error || data?.error) return alert('איפוס הסיסמה נכשל: ' + (data?.error || error.message));
+            prompt('הסיסמה הזמנית החדשה (העתק ומסור למשתמש):', data.temporary_password);
+        }
+        async function toggleUserActive(id, active) {
+            if (!isAdmin()) return;
+            const u = users.find(x => x.id === id);
+            if (!u || !confirm(active ? `להפעיל מחדש את ${u.username}?` : `לחסום את ${u.username}?`)) return;
+            const { error } = await sb.from('profiles').update({ is_active: active, approved: active }).eq('id', id);
+            if (error) return alert('שגיאה בעדכון מצב המשתמש: ' + error.message);
             await loadUsers(); renderUsers();
         }
 

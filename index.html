@@ -279,14 +279,19 @@
             <div id="viewBoard" class="space-y-5">
 
                 <!-- Category filters -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                     <button type="button" onclick="setCategoryFilter('ALL')" id="catBtn_ALL"
-                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-blue-600 text-white shadow-soft">
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
                         <i class="fa-solid fa-layer-group"></i><span>כל הקריאות</span>
                     </button>
                     <button type="button" onclick="setCategoryFilter('OPEN')" id="catBtn_OPEN"
-                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-blue-600 text-white shadow-soft">
                         <i class="fa-solid fa-spinner text-amber-500"></i><span>קריאות פתוחות</span>
+                    </button>
+                    <button type="button" onclick="setCategoryFilter('PENDING')" id="catBtn_PENDING"
+                            class="cat-btn hidden p-3 rounded-2xl font-semibold text-xs md:text-sm items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
+                        <i class="fa-solid fa-hourglass-half text-violet-500"></i><span>ממתינות לאישור</span>
+                        <span id="pendingCallsBadge" class="hidden bg-violet-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none"></span>
                     </button>
                     <button type="button" onclick="setCategoryFilter('RESOLVED')" id="catBtn_RESOLVED"
                             class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
@@ -732,7 +737,7 @@
         </div>
     </div>
 
-    <!-- Ad-hoc fault (תקלה מזדמנת) – for technicians -->
+    <!-- Ad-hoc fault (תקלה מזדמנת) -->
     <div id="adHocModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
         <div class="modal-panel bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
@@ -741,7 +746,7 @@
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
-            <p class="text-xs text-slate-500 -mt-1">בחר אתר, תאר את התקלה ואת הפתרון. הקריאה תישמר כהושלמה ותשויך אליך.</p>
+            <p class="text-xs text-slate-500 -mt-1">בחר אתר, תאר את התקלה ואת הפתרון. הקריאה תישמר כממתינה לאישור מנהל לפני כניסה ליומן.</p>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">שם אתר / מצלמה *</label>
@@ -765,7 +770,7 @@
                               class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400"></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">תיאור מפורט של ביצוע הטיפול (כל שורה תופיע כנקודה בסיכום) *</label>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">תיאור מפורט של ביצוע הטיפול *</label>
                     <textarea id="adHocSolution" rows="3" placeholder="פרט את הפעולות שבוצעו באתר..."
                               class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400"></textarea>
                 </div>
@@ -815,14 +820,11 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">הערות</label>
-                    <textarea id="adHocNotes" rows="2"
-                              class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800"></textarea>
+                    <textarea id="adHocNotes" rows="2" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800"></textarea>
                 </div>
                 <div class="flex flex-wrap justify-end gap-2.5 pt-1">
-                    <button type="button" onclick="closeModal('adHocModal')"
-                            class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition">ביטול</button>
-                    <button type="button" onclick="saveAdHocCall()"
-                            class="btn-press bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-amber-500/25 transition">שמור תקלה מזדמנת</button>
+                    <button type="button" onclick="closeModal('adHocModal')" class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition">ביטול</button>
+                    <button type="button" onclick="saveAdHocCall()" class="btn-press bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-amber-500/25 transition">שמור תקלה מזדמנת</button>
                 </div>
             </div>
         </div>
@@ -841,7 +843,7 @@
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const ROLE = { admin: 'מנהל מערכת', user: 'טכנאי' };
 
-        let me = null, calls = [], users = [], sites = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
+        let me = null, calls = [], users = [], sites = [], mode = 'login', currentCategoryFilter = 'OPEN', activeCall = null, channel = null;
         const dayOverrides = new Map(); // בחירות ידניות של המשתמש: תאריך -> true=מקופל. ברירת מחדל: רק היום פתוח
         const isAdmin = () => me && me.role === 'admin';
 
@@ -909,11 +911,18 @@
             if (isAdmin()) $('tabUsers').classList.add('flex');
             $('newCallBtn').classList.toggle('hidden', !isAdmin());
             if (isAdmin()) $('newCallBtn').classList.add('flex');
+            // כפתור ממתינות לאישור – רק למנהל
+            const pendingBtn = $('catBtn_PENDING');
+            if (pendingBtn) {
+                pendingBtn.classList.toggle('hidden', !isAdmin());
+                if (isAdmin()) pendingBtn.classList.add('flex');
+            }
             await loadUsers();
             await loadSites();
             await loadCalls();
             channel = sb.channel('calls-live').on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, loadCalls).subscribe();
             switchTab('board');
+            setCategoryFilter('OPEN'); // מסך פתיחה = קריאות פתוחות
         }
 
         /* ---------- Data ---------- */
@@ -1213,13 +1222,17 @@
         }
         function setCategoryFilter(cat) {
             currentCategoryFilter = cat;
-            ['ALL', 'OPEN', 'RESOLVED', 'FUTURE'].forEach(c => {
+            ['ALL', 'OPEN', 'PENDING', 'RESOLVED', 'FUTURE'].forEach(c => {
                 const el = $(`catBtn_${c}`);
+                if (!el) return;
                 const isActive = c === cat;
-                el.className = "cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 transition shadow-soft " +
-                    (isActive
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50");
+                const base = "cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm items-center justify-center gap-2 transition shadow-soft ";
+                // PENDING נשאר hidden לטכנאים
+                if (c === 'PENDING' && !isAdmin()) {
+                    el.className = base + "hidden";
+                    return;
+                }
+                el.className = base + (isActive ? "flex bg-blue-600 text-white" : "flex bg-white text-slate-700 border border-slate-200 hover:bg-slate-50");
             });
             renderCalls();
         }
@@ -1243,9 +1256,20 @@
             const search = ($('searchSite').value || '').toLowerCase();
             const todayStr = new Date().toISOString().split('T')[0];
 
+            // עדכון באדג' של ממתינות לאישור (למנהל)
+            if (isAdmin()) {
+                const pendingCount = calls.filter(c => c.status === 'ממתין לאישור').length;
+                const badge = $('pendingCallsBadge');
+                if (badge) {
+                    badge.textContent = pendingCount || '';
+                    badge.classList.toggle('hidden', !pendingCount);
+                }
+            }
+
             const filtered = calls.filter(c => {
                 if (!(c.site_name + ' ' + c.problem).toLowerCase().includes(search)) return false;
-                if (currentCategoryFilter === 'OPEN') return c.status === 'חדשה' || c.status === 'בטיפול';
+                if (currentCategoryFilter === 'OPEN') return c.status === 'חדשה' || c.status === 'בטיפול' || c.status === 'ממתין לאישור';
+                if (currentCategoryFilter === 'PENDING') return c.status === 'ממתין לאישור';
                 if (currentCategoryFilter === 'RESOLVED') return c.status === 'הושלמה';
                 if (currentCategoryFilter === 'FUTURE') return c.call_date > todayStr;
                 return true;
@@ -1275,6 +1299,7 @@
                     if (c.status === 'בטיפול') { badge = 'bg-amber-50 text-amber-700 border-amber-100 status-open'; badgeIcon = 'fa-spinner'; }
                     if (c.status === 'מבוטלת') { badge = 'bg-red-50 text-red-700 border-red-100'; badgeIcon = 'fa-xmark'; }
                     if (c.status === 'חדשה') { badge = 'bg-blue-50 text-blue-700 border-blue-100 status-open'; badgeIcon = 'fa-plus'; }
+                    if (c.status === 'ממתין לאישור') { badge = 'bg-violet-50 text-violet-700 border-violet-100 status-open'; badgeIcon = 'fa-hourglass-half'; }
 
                     return `
                     <div class="card-lift bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-between space-y-3">
@@ -1412,16 +1437,13 @@
             if (!site_name || !problem || !solution) return alert('נא למלא אתר, תיאור תקלה ותיאור טיפול.');
             if (!handler) return alert('יש לבחור גורם מטפל מהרשימה.');
             if (!sites.some(x => x["שם האתר"] === site_name)) return alert('יש לבחור אתר מהרשימה שבמאגר האתרים.');
+            const status = isAdmin() ? 'הושלמה' : 'ממתין לאישור';
             const row = {
-                site_name,
-                problem,
-                solution,
+                site_name, problem, solution,
                 parts: $('adHocParts').value.trim() || null,
                 call_date: localToday(),
-                assigned_to: me.id,
-                created_by: me.id,
-                priority: 'רגיל',
-                status: 'הושלמה',
+                assigned_to: me.id, created_by: me.id,
+                priority: 'רגיל', status,
                 region: $('adHocRegion').value.trim() || null,
                 site_ok: $('adHocSiteOk').value === 'ok' ? true : $('adHocSiteOk').value === 'bad' ? false : null,
                 opened_in_check: $('adHocCheck').checked,
@@ -1437,7 +1459,7 @@
             if (error) return alert('שגיאה בשמירה: ' + error.message);
             closeModal('adHocModal');
             loadCalls();
-            toast('תקלה מזדמנת נשמרה בהצלחה');
+            toast(status === 'ממתין לאישור' ? 'תקלה מזדמנת נשלחה לאישור מנהל' : 'תקלה מזדמנת נשמרה בהצלחה');
         }
 
         /* ---------- Update / close call ---------- */
@@ -1446,7 +1468,9 @@
             if (!activeCall) return;
             $('solutionDesc').value = activeCall.solution || '';
             $('replacedParts').value = activeCall.parts || '';
-            $('finalStatus').value = activeCall.status === 'חדשה' ? 'הושלמה' : activeCall.status;
+            // אם ממתינה לאישור – ברירת מחדל להשלמה (למנהל)
+            const st = activeCall.status;
+            $('finalStatus').value = (st === 'חדשה' || st === 'ממתין לאישור') ? 'הושלמה' : st;
             $('closeSiteOk').value = activeCall.site_ok === false ? 'bad' : (activeCall.site_ok === true ? 'ok' : '');
             $('closeCrane').checked = !!activeCall.crane_used;
             $('closePowerLift').checked = !!activeCall.power_lift;
@@ -1463,9 +1487,14 @@
         async function saveCompletedCall() {
             if (!activeCall) return;
             if (!$('closeHandler').value) return alert('יש לבחור גורם מטפל מהרשימה.');
+            // טכנאי → ממתין לאישור; מנהל יכול לסגור ישירות ליומן
+            const chosenStatus = $('finalStatus').value;
+            const finalStatus = isAdmin()
+                ? chosenStatus
+                : (chosenStatus === 'מבוטלת' || chosenStatus === 'בטיפול' ? chosenStatus : 'ממתין לאישור');
             const { error } = await sb.from('calls').update({
                 solution: $('solutionDesc').value, parts: $('replacedParts').value,
-                status: $('finalStatus').value,
+                status: finalStatus,
                 site_ok: $('closeSiteOk').value === 'ok' ? true : $('closeSiteOk').value === 'bad' ? false : null,
                 region: $('closeRegion').value.trim(), opened_in_check: $('closeCheck').checked,
                 notes: $('closeNotes').value.trim(),
@@ -1479,6 +1508,7 @@
             if (error) return alert('שגיאה בעדכון: ' + error.message);
             closeModal('closeCallModal');
             loadCalls();
+            if (!isAdmin() && finalStatus === 'ממתין לאישור') toast('הקריאה נשלחה לאישור מנהל לפני כניסה ליומן המבצעים');
         }
         function sendWhatsAppSummary() {
             if (!activeCall) return;

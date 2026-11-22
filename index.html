@@ -305,6 +305,10 @@
                                 class="hidden btn-press bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition">
                             <i class="fa-solid fa-plus"></i><span>פתח קריאה חדשה</span>
                         </button>
+                        <button type="button" id="adHocBtn" onclick="openAdHocModal()"
+                                class="btn-press bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/25 transition">
+                            <i class="fa-solid fa-bolt"></i><span>תקלה מזדמנת</span>
+                        </button>
                         <button type="button" onclick="openDailyModal()"
                                 class="btn-press bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition">
                             <i class="fa-brands fa-whatsapp text-base"></i><span>סיכום יום בוואטסאפ</span>
@@ -505,12 +509,6 @@
             </div>
         </main>
 
-        <!-- Floating WhatsApp button -->
-        <button type="button" onclick="openDailyModal()"
-                class="btn-press fixed bottom-5 left-5 z-40 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-xl shadow-emerald-600/30 px-5 py-3.5 flex items-center gap-2.5 text-sm font-bold transition">
-            <i class="fa-brands fa-whatsapp text-xl"></i>
-            <span>סיכום יום</span>
-        </button>
     </div>
 
     <!-- ==================== Modals ==================== -->
@@ -729,6 +727,102 @@
                     </button>
                     <button type="button" onclick="saveCompletedCall()"
                             class="btn-press bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 transition">שמור וסגור</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ad-hoc fault (תקלה מזדמנת) – for technicians -->
+    <div id="adHocModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
+        <div class="modal-panel bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
+                <h3 class="text-base md:text-lg font-bold text-slate-900">דיווח תקלה מזדמנת</h3>
+                <button type="button" onclick="closeModal('adHocModal')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 -mt-1">בחר אתר, תאר את התקלה ואת הפתרון. הקריאה תישמר כהושלמה ותשויך אליך.</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">שם אתר / מצלמה *</label>
+                    <input type="text" id="adHocSiteName" list="siteList" oninput="onAdHocSiteInput()" autocomplete="off"
+                           placeholder="התחל להקליד כדי לבחור מהרשימה"
+                           class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
+                    <p id="adHocSiteHint"></p>
+                    <a id="adHocSiteWazeLink" href="#" target="_blank" rel="noopener noreferrer"
+                       class="hidden mt-2 inline-flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 border border-cyan-100 transition">
+                        <i class="fa-solid fa-location-arrow"></i><span>נווט לאתר באמצעות Waze</span>
+                    </a>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">חטיבה</label>
+                    <input type="text" id="adHocRegion" list="regionList" placeholder="לדוגמה: חטיבה מרחבית"
+                           class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">תיאור התקלה *</label>
+                    <textarea id="adHocProblem" rows="2" placeholder="מה היתה התקלה?"
+                              class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">תיאור מפורט של ביצוע הטיפול (כל שורה תופיע כנקודה בסיכום) *</label>
+                    <textarea id="adHocSolution" rows="3" placeholder="פרט את הפעולות שבוצעו באתר..."
+                              class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">רכיבים שהוחלפו</label>
+                    <input type="text" id="adHocParts" placeholder="לדוגמה: ספק כוח, כבל..."
+                           class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">מצב האתר</label>
+                        <select id="adHocSiteOk" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
+                            <option value="">לא צוין</option>
+                            <option value="ok">אתר תקין 🟢</option>
+                            <option value="bad">אתר לא תקין 🔴</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">גורם מטפל *</label>
+                        <select id="adHocHandler" required class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
+                            <option value="">בחר גורם מטפל</option>
+                            <option value="ית&quot;ד - צוות שטח">ית&quot;ד - צוות שטח</option>
+                            <option value="ית&quot;ד - צוות דסק">ית&quot;ד - צוות דסק</option>
+                            <option value="חברה אזרחית">חברה אזרחית</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 rounded-xl bg-slate-50 p-3.5 border border-slate-100">
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="adHocCrane" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> נעשה שימוש בסל מנוף
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="adHocCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> נפתח בצ'ק
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="adHocPowerLift" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> הרמת חשמל
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="adHocLocalReboot" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> ריסוט/ריבוט מקומי
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="adHocRemoteReboot" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> ריבוט מרחוק
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium">
+                        <input type="checkbox" id="adHocSimReplace" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> החלפת סים
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">הערות</label>
+                    <textarea id="adHocNotes" rows="2"
+                              class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800"></textarea>
+                </div>
+                <div class="flex flex-wrap justify-end gap-2.5 pt-1">
+                    <button type="button" onclick="closeModal('adHocModal')"
+                            class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition">ביטול</button>
+                    <button type="button" onclick="saveAdHocCall()"
+                            class="btn-press bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-amber-500/25 transition">שמור תקלה מזדמנת</button>
                 </div>
             </div>
         </div>
@@ -1263,6 +1357,87 @@
             if (error) return alert('שגיאה בשמירה: ' + error.message);
             closeModal('newCallModal');
             loadCalls();
+        }
+
+        /* ---------- Ad-hoc fault (תקלה מזדמנת) ---------- */
+        function openAdHocModal() {
+            $('adHocSiteName').value = '';
+            $('adHocRegion').value = '';
+            $('adHocProblem').value = '';
+            $('adHocSolution').value = '';
+            $('adHocParts').value = '';
+            $('adHocSiteOk').value = '';
+            $('adHocHandler').value = '';
+            $('adHocCrane').checked = false;
+            $('adHocCheck').checked = false;
+            $('adHocPowerLift').checked = false;
+            $('adHocLocalReboot').checked = false;
+            $('adHocRemoteReboot').checked = false;
+            $('adHocSimReplace').checked = false;
+            $('adHocNotes').value = '';
+            $('adHocSiteHint').textContent = '';
+            $('adHocSiteWazeLink').classList.add('hidden');
+            $('adHocSiteWazeLink').removeAttribute('href');
+            $('adHocModal').classList.remove('hidden');
+        }
+        function onAdHocSiteInput() {
+            const v = $('adHocSiteName').value.trim(), hint = $('adHocSiteHint');
+            const s = sites.find(x => x["שם האתר"] === v);
+            const wazeLink = $('adHocSiteWazeLink');
+            wazeLink.classList.add('hidden');
+            wazeLink.removeAttribute('href');
+            if (s) {
+                if (s["חטיבה"]) $('adHocRegion').value = s["חטיבה"];
+                hint.textContent = `נמצא במאגר${s["שטח"] ? ' · שטח: ' + s["שטח"] : ''}${s["מס' מצלמות"] ? ' · ' + s["מס' מצלמות"] + ' מצלמות' : ''}`;
+                hint.className = 'text-[11px] text-emerald-600 mt-1.5 font-medium';
+                const url = getWazeUrlFromCoordinates(s["נ.צ"]);
+                if (url) {
+                    wazeLink.href = url;
+                    wazeLink.classList.remove('hidden');
+                } else if (s["נ.צ"]) {
+                    hint.textContent += ' · הנ.צ קיים אך אינו בפורמט קואורדינטות עשרוניות';
+                } else {
+                    hint.textContent += ' · לא הוזן נ.צ לאתר';
+                }
+            } else {
+                hint.textContent = v ? 'האתר לא במאגר. יש לבחור אתר מהרשימה' : '';
+                hint.className = 'text-[11px] text-amber-600 mt-1.5 font-medium';
+            }
+        }
+        async function saveAdHocCall() {
+            const site_name = $('adHocSiteName').value.trim();
+            const problem = $('adHocProblem').value.trim();
+            const solution = $('adHocSolution').value.trim();
+            const handler = $('adHocHandler').value.trim();
+            if (!site_name || !problem || !solution) return alert('נא למלא אתר, תיאור תקלה ותיאור טיפול.');
+            if (!handler) return alert('יש לבחור גורם מטפל מהרשימה.');
+            if (!sites.some(x => x["שם האתר"] === site_name)) return alert('יש לבחור אתר מהרשימה שבמאגר האתרים.');
+            const row = {
+                site_name,
+                problem,
+                solution,
+                parts: $('adHocParts').value.trim() || null,
+                call_date: localToday(),
+                assigned_to: me.id,
+                created_by: me.id,
+                priority: 'רגיל',
+                status: 'הושלמה',
+                region: $('adHocRegion').value.trim() || null,
+                site_ok: $('adHocSiteOk').value === 'ok' ? true : $('adHocSiteOk').value === 'bad' ? false : null,
+                opened_in_check: $('adHocCheck').checked,
+                notes: $('adHocNotes').value.trim() || null,
+                crane_used: $('adHocCrane').checked,
+                power_lift: $('adHocPowerLift').checked,
+                local_reboot: $('adHocLocalReboot').checked,
+                remote_reboot: $('adHocRemoteReboot').checked,
+                sim_replaced: $('adHocSimReplace').checked,
+                handler
+            };
+            const { error } = await sb.from('calls').insert(row);
+            if (error) return alert('שגיאה בשמירה: ' + error.message);
+            closeModal('adHocModal');
+            loadCalls();
+            toast('תקלה מזדמנת נשמרה בהצלחה');
         }
 
         /* ---------- Update / close call ---------- */

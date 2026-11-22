@@ -8,13 +8,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <style>
         #mapContainer { height: 70vh; min-height: 420px; border-radius: 1rem; z-index: 1; }
         .leaflet-popup-content { direction: rtl; text-align: right; font-family: 'Heebo', sans-serif; }
-        .camera-marker { background: #2563eb; border: 2px solid white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-        .tech-marker { background: #059669; border: 2px solid white; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+        .camera-marker { background: #2563eb; border: 2px solid #fff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+        .tech-marker { background: #059669; border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
     </style>
     <script>
         tailwind.config = {
@@ -292,14 +292,19 @@
             <div id="viewBoard" class="space-y-5">
 
                 <!-- Category filters -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                     <button type="button" onclick="setCategoryFilter('ALL')" id="catBtn_ALL"
-                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-blue-600 text-white shadow-soft">
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
                         <i class="fa-solid fa-layer-group"></i><span>כל הקריאות</span>
                     </button>
                     <button type="button" onclick="setCategoryFilter('OPEN')" id="catBtn_OPEN"
-                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
+                            class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-blue-600 text-white shadow-soft">
                         <i class="fa-solid fa-spinner text-amber-500"></i><span>קריאות פתוחות</span>
+                    </button>
+                    <button type="button" onclick="setCategoryFilter('PENDING')" id="catBtn_PENDING"
+                            class="cat-btn hidden p-3 rounded-2xl font-semibold text-xs md:text-sm items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
+                        <i class="fa-solid fa-hourglass-half text-violet-500"></i><span>ממתינות לאישור</span>
+                        <span id="pendingCallsBadge" class="hidden bg-violet-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none"></span>
                     </button>
                     <button type="button" onclick="setCategoryFilter('RESOLVED')" id="catBtn_RESOLVED"
                             class="cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-soft">
@@ -317,6 +322,10 @@
                         <button type="button" id="newCallBtn" onclick="openNewCallModal()"
                                 class="hidden btn-press bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition">
                             <i class="fa-solid fa-plus"></i><span>פתח קריאה חדשה</span>
+                        </button>
+                        <button type="button" id="adHocBtn" onclick="openAdHocModal()"
+                                class="btn-press bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/25 transition">
+                            <i class="fa-solid fa-bolt"></i><span>תקלה מזדמנת</span>
                         </button>
                         <button type="button" onclick="openDailyModal()"
                                 class="btn-press bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition">
@@ -489,23 +498,14 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
                             <h2 class="text-lg md:text-xl font-bold text-slate-900">מפת אתרים וטכנאים</h2>
-                            <p class="text-xs md:text-sm text-slate-500 mt-0.5">אתרים לפי נ.צ · טכנאים בזמן אמת (כשהם משתפים מיקום)</p>
+                            <p class="text-xs md:text-sm text-slate-500 mt-0.5">אתרים לפי נ.צ · טכנאים בזמן אמת</p>
                         </div>
                         <div class="flex flex-wrap gap-2 items-center">
-                            <span class="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-100">
-                                <i class="fa-solid fa-video"></i> אתרים
-                            </span>
-                            <span class="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100">
-                                <i class="fa-solid fa-user"></i> טכנאים חיים
-                            </span>
-                            <button type="button" id="startShiftBtn" onclick="startLocationSharing()"
-                                    class="btn-press hidden bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold items-center gap-2 shadow-sm">
-                                <i class="fa-solid fa-play"></i> התחל משמרת + שתף מיקום
-                            </button>
-                            <button type="button" id="stopShiftBtn" onclick="stopLocationSharing()"
-                                    class="btn-press hidden bg-red-500 hover:bg-red-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold items-center gap-2 shadow-sm">
-                                <i class="fa-solid fa-stop"></i> סיום משמרת
-                            </button>
+                            <span class="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-100"><i class="fa-solid fa-video"></i> אתרים</span>
+                            <span class="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100"><i class="fa-solid fa-user"></i> טכנאים</span>
+                            <button type="button" id="startShiftBtn" onclick="startLocationSharing()" class="btn-press bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm"><i class="fa-solid fa-play"></i> התחל משמרת</button>
+                            <button type="button" id="stopShiftBtn" onclick="stopLocationSharing()" class="btn-press hidden bg-red-500 hover:bg-red-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold items-center gap-2 shadow-sm"><i class="fa-solid fa-stop"></i> סיום משמרת</button>
+                            <button type="button" id="stopFollowBtn" onclick="stopFollow()" class="btn-press hidden bg-slate-600 hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold items-center gap-2 shadow-sm"><i class="fa-solid fa-eye-slash"></i> הפסק מעקב</button>
                             <span id="shiftStatus" class="text-xs font-medium text-slate-500"></span>
                         </div>
                     </div>
@@ -549,12 +549,6 @@
             </div>
         </main>
 
-        <!-- Floating WhatsApp button -->
-        <button type="button" onclick="openDailyModal()"
-                class="btn-press fixed bottom-5 left-5 z-40 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-xl shadow-emerald-600/30 px-5 py-3.5 flex items-center gap-2.5 text-sm font-bold transition">
-            <i class="fa-brands fa-whatsapp text-xl"></i>
-            <span>סיכום יום</span>
-        </button>
     </div>
 
     <!-- ==================== Modals ==================== -->
@@ -778,6 +772,77 @@
         </div>
     </div>
 
+
+    <!-- Ad-hoc fault modal -->
+    <div id="adHocModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
+        <div class="modal-panel bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
+                <h3 class="text-base md:text-lg font-bold text-slate-900">דיווח תקלה מזדמנת</h3>
+                <button type="button" onclick="closeModal('adHocModal')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500">בחר אתר, תאר תקלה ופתרון. תישמר כממתינה לאישור מנהל.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">שם אתר *</label>
+                    <input type="text" id="adHocSiteName" list="siteList" oninput="onAdHocSiteInput()" autocomplete="off" placeholder="התחל להקליד..."
+                           class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50">
+                    <p id="adHocSiteHint"></p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">חטיבה</label>
+                    <input type="text" id="adHocRegion" list="regionList" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">תיאור התקלה *</label>
+                    <textarea id="adHocProblem" rows="2" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">תיאור הטיפול *</label>
+                    <textarea id="adHocSolution" rows="3" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">רכיבים שהוחלפו</label>
+                    <input type="text" id="adHocParts" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">מצב האתר</label>
+                        <select id="adHocSiteOk" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50">
+                            <option value="">לא צוין</option>
+                            <option value="ok">אתר תקין</option>
+                            <option value="bad">אתר לא תקין</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">גורם מטפל *</label>
+                        <select id="adHocHandler" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50">
+                            <option value="">בחר</option>
+                            <option value="ית&quot;ד - צוות שטח">ית"ד - צוות שטח</option>
+                            <option value="ית&quot;ד - צוות דסק">ית"ד - צוות דסק</option>
+                            <option value="חברה אזרחית">חברה אזרחית</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl text-xs">
+                    <label class="flex items-center gap-2"><input type="checkbox" id="adHocCrane"> סל מנוף</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="adHocCheck"> נפתח בצ'ק</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="adHocPowerLift"> הרמת חשמל</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="adHocLocalReboot"> ריבוט מקומי</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="adHocRemoteReboot"> ריבוט מרחוק</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="adHocSimReplace"> החלפת סים</label>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">הערות</label>
+                    <textarea id="adHocNotes" rows="2" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('adHocModal')" class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold">ביטול</button>
+                    <button type="button" onclick="saveAdHocCall()" class="btn-press bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">שמור תקלה מזדמנת</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ====== הגדרות Supabase: להחליף בערכים שלך (Settings -> API) ======
         const SUPABASE_URL = 'https://medlpvrzeyeniijqyswo.supabase.co';
@@ -791,7 +856,7 @@
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const ROLE = { admin: 'מנהל מערכת', user: 'טכנאי' };
 
-        let me = null, calls = [], users = [], sites = [], mode = 'login', currentCategoryFilter = 'ALL', activeCall = null, channel = null;
+        let me = null, calls = [], users = [], sites = [], mode = 'login', currentCategoryFilter = 'OPEN', activeCall = null, channel = null;
         const dayOverrides = new Map(); // בחירות ידניות של המשתמש: תאריך -> true=מקופל. ברירת מחדל: רק היום פתוח
         const isAdmin = () => me && me.role === 'admin';
 
@@ -859,11 +924,14 @@
             if (isAdmin()) $('tabUsers').classList.add('flex');
             $('newCallBtn').classList.toggle('hidden', !isAdmin());
             if (isAdmin()) $('newCallBtn').classList.add('flex');
+            const pendingBtn = $('catBtn_PENDING');
+            if (pendingBtn) { pendingBtn.classList.toggle('hidden', !isAdmin()); if (isAdmin()) pendingBtn.classList.add('flex'); }
             await loadUsers();
             await loadSites();
             await loadCalls();
             channel = sb.channel('calls-live').on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, loadCalls).subscribe();
             switchTab('board');
+            setCategoryFilter('OPEN');
         }
 
         /* ---------- Data ---------- */
@@ -1152,30 +1220,27 @@
                 $('tabUsers').classList.remove('hidden');
                 $('tabUsers').classList.add('flex');
             }
-            // Map tab is available to everyone
-            $('tabMap').classList.remove('hidden');
-            $('tabMap').classList.add('flex');
-
+            if ($('tabMap')) { $('tabMap').classList.remove('hidden'); $('tabMap').classList.add('flex'); }
             $('viewSites').classList.toggle('hidden', tab !== 'sites');
             if (tab === 'sites') renderSites();
             $('viewLog').classList.toggle('hidden', tab !== 'log');
             if (tab === 'log') loadLog();
             $('viewBoard').classList.toggle('hidden', tab !== 'board');
             $('viewUsers').classList.toggle('hidden', tab !== 'users');
-            $('viewMap').classList.toggle('hidden', tab !== 'map');
+            if ($('viewMap')) $('viewMap').classList.toggle('hidden', tab !== 'map');
             if (tab === 'board') renderCalls();
             if (tab === 'users') loadUsers().then(renderUsers);
             if (tab === 'map') initMap();
         }
         function setCategoryFilter(cat) {
             currentCategoryFilter = cat;
-            ['ALL', 'OPEN', 'RESOLVED', 'FUTURE'].forEach(c => {
+            ['ALL', 'OPEN', 'PENDING', 'RESOLVED', 'FUTURE'].forEach(c => {
                 const el = $(`catBtn_${c}`);
+                if (!el) return;
                 const isActive = c === cat;
-                el.className = "cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm flex items-center justify-center gap-2 transition shadow-soft " +
-                    (isActive
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50");
+                const base = "cat-btn p-3 rounded-2xl font-semibold text-xs md:text-sm items-center justify-center gap-2 transition shadow-soft ";
+                if (c === 'PENDING' && !isAdmin()) { el.className = base + "hidden"; return; }
+                el.className = base + (isActive ? "flex bg-blue-600 text-white" : "flex bg-white text-slate-700 border border-slate-200 hover:bg-slate-50");
             });
             renderCalls();
         }
@@ -1201,7 +1266,8 @@
 
             const filtered = calls.filter(c => {
                 if (!(c.site_name + ' ' + c.problem).toLowerCase().includes(search)) return false;
-                if (currentCategoryFilter === 'OPEN') return c.status === 'חדשה' || c.status === 'בטיפול';
+                if (currentCategoryFilter === 'OPEN') return c.status === 'חדשה' || c.status === 'בטיפול' || c.status === 'ממתין לאישור';
+                if (currentCategoryFilter === 'PENDING') return c.status === 'ממתין לאישור';
                 if (currentCategoryFilter === 'RESOLVED') return c.status === 'הושלמה';
                 if (currentCategoryFilter === 'FUTURE') return c.call_date > todayStr;
                 return true;
@@ -1231,6 +1297,7 @@
                     if (c.status === 'בטיפול') { badge = 'bg-amber-50 text-amber-700 border-amber-100 status-open'; badgeIcon = 'fa-spinner'; }
                     if (c.status === 'מבוטלת') { badge = 'bg-red-50 text-red-700 border-red-100'; badgeIcon = 'fa-xmark'; }
                     if (c.status === 'חדשה') { badge = 'bg-blue-50 text-blue-700 border-blue-100 status-open'; badgeIcon = 'fa-plus'; }
+                    if (c.status === 'ממתין לאישור') { badge = 'bg-violet-50 text-violet-700 border-violet-100 status-open'; badgeIcon = 'fa-hourglass-half'; }
 
                     return `
                     <div class="card-lift bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-between space-y-3">
@@ -1338,9 +1405,11 @@
         async function saveCompletedCall() {
             if (!activeCall) return;
             if (!$('closeHandler').value) return alert('יש לבחור גורם מטפל מהרשימה.');
+            const chosenStatus = $('finalStatus').value;
+            const finalStatus = isAdmin() ? chosenStatus : (chosenStatus === 'מבוטלת' || chosenStatus === 'בטיפול' ? chosenStatus : 'ממתין לאישור');
             const { error } = await sb.from('calls').update({
                 solution: $('solutionDesc').value, parts: $('replacedParts').value,
-                status: $('finalStatus').value,
+                status: finalStatus,
                 site_ok: $('closeSiteOk').value === 'ok' ? true : $('closeSiteOk').value === 'bad' ? false : null,
                 region: $('closeRegion').value.trim(), opened_in_check: $('closeCheck').checked,
                 notes: $('closeNotes').value.trim(),
@@ -1354,6 +1423,7 @@
             if (error) return alert('שגיאה בעדכון: ' + error.message);
             closeModal('closeCallModal');
             loadCalls();
+            if (!isAdmin() && finalStatus === 'ממתין לאישור') toast('הקריאה נשלחה לאישור מנהל');
         }
         function sendWhatsAppSummary() {
             if (!activeCall) return;
@@ -1533,158 +1603,172 @@
             }, 7000);
         }
 
-        /* ---------- Map + Live technician locations ---------- */
-        let map = null, siteMarkersLayer = null, techMarkersLayer = null, locationWatchId = null, techLocationsChannel = null;
-        let isSharingLocation = false;
+        /* ===== Ad-hoc + Map + Live location ===== */
+        function openAdHocModal() {
+            ['adHocSiteName','adHocRegion','adHocProblem','adHocSolution','adHocParts','adHocNotes'].forEach(id => { if($(id)) $(id).value = ''; });
+            if ($('adHocSiteOk')) $('adHocSiteOk').value = '';
+            if ($('adHocHandler')) $('adHocHandler').value = '';
+            ['adHocCrane','adHocCheck','adHocPowerLift','adHocLocalReboot','adHocRemoteReboot','adHocSimReplace'].forEach(id => { if($(id)) $(id).checked = false; });
+            if ($('adHocSiteHint')) $('adHocSiteHint').textContent = '';
+            $('adHocModal').classList.remove('hidden');
+        }
+        function onAdHocSiteInput() {
+            const v = $('adHocSiteName').value.trim();
+            const s = sites.find(x => x["שם האתר"] === v);
+            const hint = $('adHocSiteHint');
+            if (s) {
+                if (s["חטיבה"]) $('adHocRegion').value = s["חטיבה"];
+                hint.textContent = 'נמצא במאגר'; hint.className = 'text-[11px] text-emerald-600 mt-1';
+            } else {
+                hint.textContent = v ? 'יש לבחור אתר מהרשימה' : '';
+                hint.className = 'text-[11px] text-amber-600 mt-1';
+            }
+        }
+        async function saveAdHocCall() {
+            const site_name = $('adHocSiteName').value.trim();
+            const problem = $('adHocProblem').value.trim();
+            const solution = $('adHocSolution').value.trim();
+            const handler = $('adHocHandler').value.trim();
+            if (!site_name || !problem || !solution) return alert('נא למלא אתר, תקלה וטיפול');
+            if (!handler) return alert('יש לבחור גורם מטפל');
+            if (!sites.some(x => x["שם האתר"] === site_name)) return alert('יש לבחור אתר מהמאגר');
+            const status = isAdmin() ? 'הושלמה' : 'ממתין לאישור';
+            const row = {
+                site_name, problem, solution,
+                parts: $('adHocParts').value.trim() || null,
+                call_date: localToday(), assigned_to: me.id, created_by: me.id,
+                priority: 'רגיל', status,
+                region: $('adHocRegion').value.trim() || null,
+                site_ok: $('adHocSiteOk').value === 'ok' ? true : $('adHocSiteOk').value === 'bad' ? false : null,
+                opened_in_check: $('adHocCheck').checked,
+                notes: $('adHocNotes').value.trim() || null,
+                crane_used: $('adHocCrane').checked, power_lift: $('adHocPowerLift').checked,
+                local_reboot: $('adHocLocalReboot').checked, remote_reboot: $('adHocRemoteReboot').checked,
+                sim_replaced: $('adHocSimReplace').checked, handler
+            };
+            const { error } = await sb.from('calls').insert(row);
+            if (error) return alert('שגיאה: ' + error.message);
+            closeModal('adHocModal'); loadCalls();
+            toast(status === 'ממתין לאישור' ? 'נשלח לאישור מנהל' : 'נשמר בהצלחה');
+        }
+
+        let map = null, siteMarkersLayer = null, techMarkersLayer = null, locationWatchId = null, isSharingLocation = false, followedTechId = null;
 
         function parseCoords(raw) {
             if (!raw) return null;
-            const numbers = String(raw).trim().match(/[-+]?\d+(?:\.\d+)?/g);
-            if (!numbers || numbers.length < 2) return null;
-            const lat = Number(numbers[0]), lon = Number(numbers[1]);
+            const n = String(raw).trim().match(/[-+]?\d+(?:\.\d+)?/g);
+            if (!n || n.length < 2) return null;
+            const lat = +n[0], lon = +n[1];
             if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
             return [lat, lon];
         }
-
         function cameraIcon() {
-            return L.divIcon({
-                className: '',
-                html: '<div class="camera-marker"><i class="fa-solid fa-video text-white text-xs"></i></div>',
-                iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -16]
-            });
+            return L.divIcon({ className: '', html: '<div class="camera-marker"><i class="fa-solid fa-video text-white text-xs"></i></div>', iconSize: [32,32], iconAnchor: [16,16], popupAnchor: [0,-16] });
         }
         function techIcon() {
-            return L.divIcon({
-                className: '',
-                html: '<div class="tech-marker"><i class="fa-solid fa-user text-white text-xs"></i></div>',
-                iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -17]
-            });
+            return L.divIcon({ className: '', html: '<div class="tech-marker"><i class="fa-solid fa-user text-white text-xs"></i></div>', iconSize: [34,34], iconAnchor: [17,17], popupAnchor: [0,-17] });
         }
-
         function initMap() {
+            if (typeof L === 'undefined') { $('mapHint').textContent = 'Leaflet לא נטען'; return; }
             if (!map) {
-                map = L.map('mapContainer', { zoomControl: true }).setView([31.5, 34.8], 8); // ישראל
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap', maxZoom: 19
-                }).addTo(map);
+                map = L.map('mapContainer').setView([31.5, 34.8], 8);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM', maxZoom: 19 }).addTo(map);
                 siteMarkersLayer = L.layerGroup().addTo(map);
                 techMarkersLayer = L.layerGroup().addTo(map);
             }
-            setTimeout(() => map.invalidateSize(), 150);
+            setTimeout(() => map.invalidateSize(), 200);
             renderSiteMarkers();
             loadTechLocations();
             updateShiftButtons();
-            if (isAdmin() && !techLocationsChannel) {
-                techLocationsChannel = sb.channel('tech-locations')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'tech_locations' }, () => loadTechLocations())
-                    .subscribe();
-            }
         }
-
         function renderSiteMarkers() {
             if (!siteMarkersLayer) return;
             siteMarkersLayer.clearLayers();
             const bounds = [];
             let count = 0;
             sites.forEach(s => {
-                const coords = parseCoords(s["נ.צ"]);
-                if (!coords) return;
-                count++;
-                bounds.push(coords);
+                const c = parseCoords(s["נ.צ"]);
+                if (!c) return;
+                count++; bounds.push(c);
                 const name = s["שם האתר"] || 'אתר';
-                const region = s["חטיבה"] || '';
-                const cams = s["מס' מצלמות"] ?? '';
-                const popup = `<strong>${esc(name)}</strong><br>${region ? 'חטיבה: ' + esc(region) + '<br>' : ''}${cams !== '' ? cams + ' מצלמות<br>' : ''}<a href="https://waze.com/ul?ll=${coords[0]},${coords[1]}&navigate=yes" target="_blank" rel="noopener">נווט ב-Waze</a>`;
-                L.marker(coords, { icon: cameraIcon() }).bindPopup(popup).addTo(siteMarkersLayer);
+                const popup = `<strong>${esc(name)}</strong><br>${s["חטיבה"] ? 'חטיבה: ' + esc(s["חטיבה"]) + '<br>' : ''}<a href="https://waze.com/ul?ll=${c[0]},${c[1]}&navigate=yes" target="_blank">Waze</a>`;
+                L.marker(c, { icon: cameraIcon() }).bindPopup(popup).addTo(siteMarkersLayer);
             });
-            $('mapHint').textContent = count ? `${count} אתרים עם נ.צ תקין מוצגים במפה` : 'אין אתרים עם נ.צ תקין להצגה';
-            if (bounds.length) {
-                try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 }); } catch (e) {}
-            }
+            $('mapHint').textContent = count ? count + ' אתרים על המפה' : 'אין אתרים עם נ.צ תקין';
+            if (bounds.length) try { map.fitBounds(bounds, { padding: [40,40], maxZoom: 12 }); } catch(e) {}
         }
-
         async function loadTechLocations() {
             if (!techMarkersLayer) return;
             techMarkersLayer.clearLayers();
             try {
-                const { data, error } = await sb.from('tech_locations')
-                    .select('user_id, lat, lng, updated_at, is_active, profiles(username)')
-                    .eq('is_active', true);
-                if (error) {
-                    console.warn('tech_locations:', error.message);
-                    return;
-                }
+                const { data, error } = await sb.from('tech_locations').select('user_id, lat, lng, updated_at, is_active').eq('is_active', true);
+                if (error) { console.warn(error); $('mapHint').textContent = 'שגיאת מיקומים: ' + error.message; return; }
                 (data || []).forEach(row => {
-                    if (!row.lat || !row.lng) return;
-                    const name = row.profiles?.username || 'טכנאי';
+                    if (row.lat == null || row.lng == null) return;
+                    const name = (users.find(u => u.id === row.user_id) || {}).username || 'טכנאי';
                     const ago = row.updated_at ? new Date(row.updated_at).toLocaleTimeString('he-IL') : '';
-                    const popup = `<strong>${esc(name)}</strong><br>עודכן: ${ago}`;
+                    const popup = `<div style="direction:rtl;min-width:130px"><strong>${esc(name)}</strong><br>עודכן: ${ago}<br>
+                        <button onclick="focusOnTech(${row.lat},${row.lng})" style="margin-top:6px;padding:4px 8px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer">התמקד</button>
+                        <button onclick="followTech('${row.user_id}',${row.lat},${row.lng})" style="margin-top:6px;margin-right:4px;padding:4px 8px;background:#059669;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer">עקוב</button></div>`;
                     L.marker([row.lat, row.lng], { icon: techIcon() }).bindPopup(popup).addTo(techMarkersLayer);
                 });
+                if (followedTechId && data) {
+                    const f = data.find(r => r.user_id === followedTechId);
+                    if (f) map.setView([f.lat, f.lng], map.getZoom() || 14);
+                }
+                if (data && data.length) $('mapHint').textContent = ( $('mapHint').textContent || '' ) + ' · ' + data.length + ' טכנאים פעילים';
             } catch (e) { console.warn(e); }
         }
-
-        function updateShiftButtons() {
-            const startBtn = $('startShiftBtn'), stopBtn = $('stopShiftBtn'), status = $('shiftStatus');
-            if (!startBtn) return;
-            // כפתורי משמרת זמינים לטכנאים (וגם למנהל אם רוצה)
-            startBtn.classList.toggle('hidden', isSharingLocation);
-            stopBtn.classList.toggle('hidden', !isSharingLocation);
-            if (!isSharingLocation) startBtn.classList.remove('hidden');
-            if (isSharingLocation) stopBtn.classList.remove('hidden');
-            startBtn.classList.add('flex');
-            stopBtn.classList.add('flex');
-            status.textContent = isSharingLocation ? 'מיקום משותף · משמרת פעילה' : '';
+        function focusOnTech(lat, lng) { if (map) { map.setView([lat, lng], 15); toast('התמקד בטכנאי'); } }
+        function followTech(uid, lat, lng) {
+            followedTechId = uid;
+            if (map && lat != null) map.setView([lat, lng], 14);
+            const b = $('stopFollowBtn'); if (b) { b.classList.remove('hidden'); b.classList.add('flex'); }
+            toast('עוקב אחרי הטכנאי');
         }
-
+        function stopFollow() {
+            followedTechId = null;
+            const b = $('stopFollowBtn'); if (b) b.classList.add('hidden');
+            toast('המעקב הופסק');
+        }
+        function updateShiftButtons() {
+            const start = $('startShiftBtn'), stop = $('stopShiftBtn'), st = $('shiftStatus');
+            if (!start) return;
+            start.classList.toggle('hidden', isSharingLocation);
+            stop.classList.toggle('hidden', !isSharingLocation);
+            if (isSharingLocation) { stop.classList.add('flex'); start.classList.remove('flex'); }
+            else { start.classList.add('flex'); stop.classList.remove('flex'); }
+            if (st) st.textContent = isSharingLocation ? 'מיקום משותף' : '';
+        }
         async function startLocationSharing() {
-            if (!navigator.geolocation) return alert('הדפדפן לא תומך בשיתוף מיקום');
-            const ok = confirm('לאשר שיתוף מיקום בזמן אמת למשך המשמרת?\nהמיקום יישלח רק למנהלי המערכת.');
-            if (!ok) return;
-            isSharingLocation = true;
-            updateShiftButtons();
-            // שמירה ראשונית + עדכון תקופתי
-            const sendPos = async (pos) => {
+            if (!navigator.geolocation) return alert('אין תמיכה במיקום');
+            if (!confirm('לאשר שיתוף מיקום למשך המשמרת?')) return;
+            isSharingLocation = true; updateShiftButtons();
+            const send = async (pos) => {
                 const { latitude: lat, longitude: lng } = pos.coords;
-                try {
-                    await sb.from('tech_locations').upsert({
-                        user_id: me.id,
-                        lat, lng,
-                        is_active: true,
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'user_id' });
-                } catch (e) { console.warn('location upsert', e); }
+                const { error } = await sb.from('tech_locations').upsert({
+                    user_id: me.id, lat, lng, is_active: true, updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+                if (error) { console.error(error); toast('שגיאת שמירת מיקום: ' + error.message); return; }
+                if (map) loadTechLocations();
             };
-            navigator.geolocation.getCurrentPosition(sendPos, err => {
-                alert('לא ניתן לקבל מיקום: ' + err.message);
-                isSharingLocation = false;
-                updateShiftButtons();
+            navigator.geolocation.getCurrentPosition(send, err => {
+                alert('שגיאת מיקום: ' + err.message); isSharingLocation = false; updateShiftButtons();
             }, { enableHighAccuracy: true, timeout: 15000 });
-            locationWatchId = navigator.geolocation.watchPosition(sendPos, () => {}, {
-                enableHighAccuracy: true, maximumAge: 30000, timeout: 20000
-            });
+            locationWatchId = navigator.geolocation.watchPosition(send, () => {}, { enableHighAccuracy: true, maximumAge: 20000, timeout: 20000 });
             toast('שיתוף מיקום הופעל');
         }
-
         async function stopLocationSharing() {
             isSharingLocation = false;
-            if (locationWatchId != null) {
-                navigator.geolocation.clearWatch(locationWatchId);
-                locationWatchId = null;
-            }
-            try {
-                await sb.from('tech_locations').upsert({
-                    user_id: me.id,
-                    is_active: false,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id' });
-            } catch (e) {}
+            if (locationWatchId != null) { navigator.geolocation.clearWatch(locationWatchId); locationWatchId = null; }
+            await sb.from('tech_locations').upsert({ user_id: me.id, is_active: false, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
             updateShiftButtons();
-            toast('משמרת הסתיימה · שיתוף מיקום הופסק');
+            toast('משמרת הסתיימה');
             if (map) loadTechLocations();
         }
 
-        // חזרה מקישור האימות במייל
+
+                // חזרה מקישור האימות במייל
         const justConfirmed = /type=(signup|email)/.test(location.hash);
         const linkFailed = /error_code=|error=/.test(location.hash);
         boot().then(() => {

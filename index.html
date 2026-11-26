@@ -989,8 +989,8 @@
             channel = sb.channel('calls-live').on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, loadCalls).subscribe();
             switchTab('board');
             setCategoryFilter('OPEN');
-            // שחזור משמרת מיקום גם בלי להיכנס למפה
-            restoreShiftFromDb();
+            // שחזור משמרת מיקום מיד בכניסה ל-WEB (לא רק בלשונית מפה)
+            await restoreShiftFromDb();
         }
 
         /* ---------- Data ---------- */
@@ -1752,7 +1752,7 @@
             if (sec < 86400) return `לפני ${Math.floor(sec / 3600)} שע׳`;
             return `לפני ${Math.floor(sec / 86400)} ימים`;
         }
-        function initMap() {
+        async function initMap() {
             if (typeof L === 'undefined') { $('mapHint').textContent = 'Leaflet לא נטען'; return; }
             if (!map) {
                 map = L.map('mapContainer').setView([31.5, 34.8], 8);
@@ -1770,7 +1770,9 @@
             setTimeout(() => map.invalidateSize(), 200);
             renderSiteMarkers();
             loadTechLocations();
-            restoreShiftFromDb(); // שחזור מצב משמרת אחרי רענון / כניסה מחדש
+            // אם כבר שוחזר בכניסה – רק עדכון כפתורים; אחרת שחזור
+            if (isSharingLocation) updateShiftButtons();
+            else await restoreShiftFromDb();
             // רענון מיקומי טכנאים כל 20 שניות (כשמנהל/משתמש במסך המפה)
             if (techRefreshTimer) clearInterval(techRefreshTimer);
             techRefreshTimer = setInterval(() => {
@@ -1931,10 +1933,13 @@
                 const row = (data && data[0]) || null;
                 console.log('restoreShift row:', row);
                 if (row && row.is_active === true) {
+                    const already = isSharingLocation && locationWatchId != null;
                     isSharingLocation = true;
                     updateShiftButtons();
-                    beginLocationWatch();
-                    toast('משמרת מיקום שוחזרה · ממשיך לשלוח מיקום');
+                    if (!already) {
+                        beginLocationWatch();
+                        toast('משמרת מיקום שוחזרה · ממשיך לשלוח מיקום');
+                    }
                 } else {
                     isSharingLocation = false;
                     updateShiftButtons();

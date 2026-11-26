@@ -371,6 +371,10 @@
                             <input type="text" id="searchSite" oninput="renderCalls()" placeholder="חיפוש אתר או תקלה..."
                                    class="input-base w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-800 placeholder-slate-400">
                         </div>
+                        <select id="filterTech" onchange="renderCalls()"
+                                class="input-base border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 text-slate-800 sm:max-w-[11rem]">
+                            <option value="">כל הטכנאים</option>
+                        </select>
                     </div>
                 </div>
 
@@ -671,6 +675,39 @@
         </div>
     </div>
 
+    <!-- Edit Call -->
+    <div id="editCallModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
+        <div class="modal-panel bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3.5">
+                <h3 class="text-base md:text-lg font-bold text-slate-900">עריכת קריאה <span id="editCallIdLabel" class="text-slate-400 font-mono text-sm"></span></h3>
+                <button type="button" onclick="closeModal('editCallModal')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 -mt-1">עריכה למנהל בלבד: טכנאי, תאריך ביצוע ותיאור תקלה</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">שייך לטכנאי *</label>
+                    <select id="editTechnicianSelect" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">יום לביצוע *</label>
+                    <input type="date" id="editCallDate" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">תיאור התקלה *</label>
+                    <textarea id="editProblemDesc" rows="3" class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800"></textarea>
+                </div>
+                <div class="flex justify-end gap-2.5 pt-1">
+                    <button type="button" onclick="closeModal('editCallModal')"
+                            class="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition">ביטול</button>
+                    <button type="button" onclick="saveEditCall()"
+                            class="btn-press bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md transition">שמור שינויים</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Daily WhatsApp Summary -->
     <div id="dailyModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 md:p-4 hidden modal-overlay">
         <div class="modal-panel bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-modal max-h-[90vh] overflow-y-auto">
@@ -701,6 +738,13 @@
                     <input type="checkbox" id="dailyOnlyHandled" checked onchange="renderDailyList()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                     הצג רק קריאות שטופלו (ללא קריאות חדשות שטרם טופלו)
                 </label>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">סינון לפי טכנאי</label>
+                    <select id="dailyTechFilter" onchange="renderDailyList()"
+                            class="input-base w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 text-slate-800">
+                        <option value="">כל הטכנאים</option>
+                    </select>
+                </div>
                 <label class="block text-xs font-semibold text-slate-700 pt-1">בחר אילו קריאות לכלול בסיכום</label>
                 <div id="dailyList" class="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-1.5 bg-slate-50"></div>
             </div>
@@ -984,6 +1028,7 @@
             const pendingBtn = $('catBtn_PENDING');
             if (pendingBtn) { pendingBtn.classList.toggle('hidden', !isAdmin()); if (isAdmin()) pendingBtn.classList.add('flex'); }
             await loadUsers();
+            fillTechFilterSelects();
             await loadSites();
             await loadCalls();
             channel = sb.channel('calls-live').on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, loadCalls).subscribe();
@@ -1323,8 +1368,10 @@
             const search = ($('searchSite').value || '').toLowerCase();
             const todayStr = new Date().toISOString().split('T')[0];
 
+            const techFilter = ($('filterTech') && $('filterTech').value) || '';
             const filtered = calls.filter(c => {
                 if (!(c.site_name + ' ' + c.problem).toLowerCase().includes(search)) return false;
+                if (techFilter && c.assigned_to !== techFilter) return false;
                 if (currentCategoryFilter === 'OPEN') return c.status === 'חדשה' || c.status === 'בטיפול' || c.status === 'ממתין לאישור';
                 if (currentCategoryFilter === 'PENDING') return c.status === 'ממתין לאישור';
                 if (currentCategoryFilter === 'RESOLVED') return c.status === 'הושלמה';
@@ -1387,6 +1434,10 @@
                         <div class="flex justify-between items-center pt-2.5 border-t border-slate-100 text-xs">
                             <span></span>
                             <div class="flex gap-1.5">
+                                ${isAdmin() ? `<button type="button" onclick="openEditCallModal(${c.id})"
+                                        class="btn-press bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 border border-violet-100 hover:border-violet-600">
+                                    <i class="fa-solid fa-pencil text-[11px]"></i><span>ערוך</span>
+                                </button>` : ''}
                                 <button type="button" onclick="openCloseModal(${c.id})"
                                         class="btn-press bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 border border-blue-100 hover:border-blue-600">
                                     <i class="fa-solid fa-pen-to-square text-[11px]"></i><span>עדכן</span>
@@ -1417,13 +1468,39 @@
         }
 
         /* ---------- New call ---------- */
+        function approvedTechs() {
+            return users.filter(u => u.approved && u.is_active !== false && (u.role === 'user' || u.role === 'admin'));
+        }
+        function fillTechFilterSelects() {
+            const techs = approvedTechs();
+            const opts = '<option value="">כל הטכנאים</option>' +
+                techs.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
+            const ft = $('filterTech');
+            if (ft) {
+                const cur = ft.value;
+                ft.innerHTML = opts;
+                if (cur && [...ft.options].some(o => o.value === cur)) ft.value = cur;
+                // סינון טכנאי רלוונטי בעיקר למנהל; לטכנאי אפשר להסתיר
+                ft.classList.toggle('hidden', !isAdmin());
+            }
+            const dt = $('dailyTechFilter');
+            if (dt) {
+                const cur = dt.value;
+                dt.innerHTML = opts;
+                if (cur && [...dt.options].some(o => o.value === cur)) dt.value = cur;
+            }
+        }
         function openNewCallModal() {
-            const techs = users.filter(u => u.approved && u.role === 'user');
+            const techs = users.filter(u => u.approved && u.role === 'user' && u.is_active !== false);
             if (!techs.length) return alert('אין עדיין משתמשים רגילים מאושרים לשיוך קריאה. אשר משתמש בלשונית ניהול משתמשים.');
-            $('newSiteName').value = ''; $('newProblemDesc').value = ''; $('siteHint').textContent = '';
+            $('newSiteName').value = ''; $('newProblemDesc').value = ''; $('newRegion').value = '';
+            $('siteHint').textContent = '';
             $('newSiteWazeLink').classList.add('hidden'); $('newSiteWazeLink').removeAttribute('href');
             $('newCallDate').value = new Date().toISOString().split('T')[0];
-            $('newTechnicianSelect').innerHTML = techs.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
+            // שדה טכנאי ריק – חובה לבחור ידנית
+            $('newTechnicianSelect').innerHTML =
+                '<option value=\"\">-- בחר טכנאי --</option>' +
+                techs.map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('');
             $('newCallModal').classList.remove('hidden');
         }
         function closeModal(id) { $(id).classList.add('hidden'); }
@@ -1434,11 +1511,44 @@
                 priority: 'רגיל', status: 'חדשה', created_by: me.id, region: $('newRegion').value.trim()
             };
             if (!row.site_name || !row.problem || !row.call_date) return alert('נא למלא את כל שדות החובה.');
+            if (!row.assigned_to) return alert('יש לבחור טכנאי מהרשימה.');
             if (!sites.some(x => x["שם האתר"] === row.site_name)) return alert('יש לבחור אתר מהרשימה שבמאגר האתרים.');
             const { error } = await sb.from('calls').insert(row);
             if (error) return alert('שגיאה בשמירה: ' + error.message);
             closeModal('newCallModal');
             loadCalls();
+        }
+
+        /* ---------- Edit call (admin only: tech / date / problem) ---------- */
+        function openEditCallModal(id) {
+            if (!isAdmin()) return alert('רק מנהל יכול לערוך קריאה');
+            activeCall = calls.find(c => c.id === id);
+            if (!activeCall) return;
+            let opts = approvedTechs();
+            if (activeCall.assigned_to && !opts.some(u => u.id === activeCall.assigned_to)) {
+                const cur = users.find(u => u.id === activeCall.assigned_to);
+                if (cur) opts = [cur, ...opts];
+            }
+            $('editCallIdLabel').textContent = '#C-' + activeCall.id;
+            $('editProblemDesc').value = activeCall.problem || '';
+            $('editCallDate').value = activeCall.call_date || '';
+            $('editTechnicianSelect').innerHTML = opts.map(u =>
+                `<option value="${u.id}" ${u.id === activeCall.assigned_to ? 'selected' : ''}>${esc(u.username)}</option>`
+            ).join('');
+            $('editCallModal').classList.remove('hidden');
+        }
+        async function saveEditCall() {
+            if (!isAdmin() || !activeCall) return;
+            const problem = $('editProblemDesc').value.trim();
+            const call_date = $('editCallDate').value;
+            const assigned_to = $('editTechnicianSelect').value;
+            if (!problem || !call_date) return alert('נא למלא תיאור תקלה ותאריך');
+            if (!assigned_to) return alert('יש לבחור טכנאי');
+            const { error } = await sb.from('calls').update({ problem, call_date, assigned_to }).eq('id', activeCall.id);
+            if (error) return alert('שגיאה בעדכון: ' + error.message);
+            closeModal('editCallModal');
+            loadCalls();
+            toast('הקריאה עודכנה');
         }
 
         /* ---------- Update / close call ---------- */
@@ -1604,20 +1714,27 @@
         function openDailyModal() {
             $('dailyDate').value = localToday();
             if (!$('dailyLeader').value) $('dailyLeader').value = me.username;
+            fillTechFilterSelects();
             renderDailyList();
             $('dailyModal').classList.remove('hidden');
         }
         function dailyCandidates() {
             const date = $('dailyDate').value, onlyHandled = $('dailyOnlyHandled').checked;
-            return calls.filter(c => c.call_date === date && (!onlyHandled || c.status !== 'חדשה'));
+            const techF = ($('dailyTechFilter') && $('dailyTechFilter').value) || '';
+            return calls.filter(c =>
+                c.call_date === date &&
+                (!onlyHandled || c.status !== 'חדשה') &&
+                (!techF || c.assigned_to === techF)
+            );
         }
         function renderDailyList() {
             const list = dailyCandidates();
             $('dailyList').innerHTML = list.length
                 ? list.map(c => `<label class="flex items-center gap-2 text-xs py-1.5 px-2.5 rounded-lg hover:bg-white cursor-pointer transition">
                         <input type="checkbox" class="dailyChk rounded border-slate-300 text-blue-600 focus:ring-blue-500" value="${c.id}" checked onchange="refreshDailyText()">
-                        <span class="font-bold text-slate-800">${esc(c.site_name)}</span><span class="text-slate-400">(${esc(c.status)})</span></label>`).join('')
-                : '<div class="text-xs text-slate-400 py-3 px-2.5 text-center">אין קריאות מתאימות בתאריך זה</div>';
+                        <span class="font-bold text-slate-800">${esc(c.site_name)}</span>
+                        <span class="text-slate-400">(${esc(c.status)} · ${esc(techName(c.assigned_to))})</span></label>`).join('')
+                : '<div class="text-xs text-slate-400 py-3 px-2.5 text-center">אין קריאות מתאימות לסינון זה</div>';
             refreshDailyText();
         }
         function selectedDailyCalls() {

@@ -989,6 +989,8 @@
             channel = sb.channel('calls-live').on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, loadCalls).subscribe();
             switchTab('board');
             setCategoryFilter('OPEN');
+            // שחזור משמרת מיקום גם בלי להיכנס למפה
+            restoreShiftFromDb();
         }
 
         /* ---------- Data ---------- */
@@ -1915,12 +1917,20 @@
         async function restoreShiftFromDb() {
             if (!me || !sb) { updateShiftButtons(); return; }
             try {
+                // קריאה פשוטה בלי maybeSingle (תאימות טובה יותר)
                 const { data, error } = await sb.from('tech_locations')
-                    .select('is_active, updated_at')
+                    .select('user_id, is_active, updated_at, lat, lng')
                     .eq('user_id', me.id)
-                    .maybeSingle();
-                if (error) { console.warn(error); updateShiftButtons(); return; }
-                if (data && data.is_active) {
+                    .limit(1);
+                if (error) {
+                    console.warn('restoreShift error:', error);
+                    // אם RLS חוסם קריאה – נציג התראה פעם אחת בקונסול
+                    updateShiftButtons();
+                    return;
+                }
+                const row = (data && data[0]) || null;
+                console.log('restoreShift row:', row);
+                if (row && row.is_active === true) {
                     isSharingLocation = true;
                     updateShiftButtons();
                     beginLocationWatch();
@@ -1930,7 +1940,7 @@
                     updateShiftButtons();
                 }
             } catch (e) {
-                console.warn(e);
+                console.warn('restoreShift exception:', e);
                 updateShiftButtons();
             }
         }

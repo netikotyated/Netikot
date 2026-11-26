@@ -920,6 +920,19 @@
             await boot();
         }
         async function logout() {
+            // סיום משמרת מיקום אם פעילה
+            try {
+                if (locationWatchId != null) {
+                    navigator.geolocation.clearWatch(locationWatchId);
+                    locationWatchId = null;
+                }
+                if (me && isSharingLocation) {
+                    await sb.from('tech_locations').upsert({
+                        user_id: me.id, is_active: false, updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+                }
+            } catch (e) {}
+            isSharingLocation = false;
             if (channel) { sb.removeChannel(channel); channel = null; }
             await sb.auth.signOut();
             me = null; calls = []; users = []; sites = []; logRows = [];
@@ -1755,7 +1768,7 @@
             setTimeout(() => map.invalidateSize(), 200);
             renderSiteMarkers();
             loadTechLocations();
-            updateShiftButtons();
+            restoreShiftFromDb(); // שחזור מצב משמרת אחרי רענון / כניסה מחדש
             // רענון מיקומי טכנאים כל 20 שניות (כשמנהל/משתמש במסך המפה)
             if (techRefreshTimer) clearInterval(techRefreshTimer);
             techRefreshTimer = setInterval(() => {
@@ -1871,30 +1884,75 @@
             stop.classList.toggle('hidden', !isSharingLocation);
             if (isSharingLocation) { stop.classList.add('flex'); start.classList.remove('flex'); }
             else { start.classList.add('flex'); stop.classList.remove('flex'); }
-            if (st) st.textContent = isSharingLocation ? 'מיקום משותף' : '';
+            if (st) st.textContent = isSharingLocation ? 'מיקום משותף · משמרת פעילה' : '';
+        }
+        async function sendMyLocation(pos) {
+            if (!me) return;
+            const { latitude: lat, longitude: lng } = pos.coords;
+            const { error } = await sb.from('tech_locations').upsert({
+                user_id: me.id, lat, lng, is_active: true, updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+            if (error) { console.error(error); toast('שגיאת שמירת מיקום: ' + error.message); return; }
+            if (map) loadTechLocations();
+        }
+        function beginLocationWatch() {
+            if (!navigator.geolocation || !me) return;
+            if (locationWatchId != null) {
+                navigator.geolocation.clearWatch(locationWatchId);
+                locationWatchId = null;
+            }
+            navigator.geolocation.getCurrentPosition(sendMyLocation, err => {
+                console.warn('geo:', err.message);
+                // לא מכבים משמרת אוטומטית בשגיאה רגעית – רק אם המשתמש בחר להתחיל מחדש
+            }, { enableHighAccuracy: true, timeout: 15000 });
+            locationWatchId = navigator.geolocation.watchPosition(
+                sendMyLocation,
+                err => console.warn('watch:', err.message),
+                { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+            );
+        }
+        /** אחרי רענון דף / כניסה מחדש – משחזר משמרת פתוחה מ-DB ומחדש שליחת GPS */
+        async function restoreShiftFromDb() {
+            if (!me || !sb) { updateShiftButtons(); return; }
+            try {
+                const { data, error } = await sb.from('tech_locations')
+                    .select('is_active, updated_at')
+                    .eq('user_id', me.id)
+                    .maybeSingle();
+                if (error) { console.warn(error); updateShiftButtons(); return; }
+                if (data && data.is_active) {
+                    isSharingLocation = true;
+                    updateShiftButtons();
+                    beginLocationWatch();
+                    toast('משמרת מיקום שוחזרה · ממשיך לשלוח מיקום');
+                } else {
+                    isSharingLocation = false;
+                    updateShiftButtons();
+                }
+            } catch (e) {
+                console.warn(e);
+                updateShiftButtons();
+            }
         }
         async function startLocationSharing() {
             if (!navigator.geolocation) return alert('אין תמיכה במיקום');
             if (!confirm('לאשר שיתוף מיקום למשך המשמרת?')) return;
-            isSharingLocation = true; updateShiftButtons();
-            const send = async (pos) => {
-                const { latitude: lat, longitude: lng } = pos.coords;
-                const { error } = await sb.from('tech_locations').upsert({
-                    user_id: me.id, lat, lng, is_active: true, updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id' });
-                if (error) { console.error(error); toast('שגיאת שמירת מיקום: ' + error.message); return; }
-                if (map) loadTechLocations();
-            };
-            navigator.geolocation.getCurrentPosition(send, err => {
-                alert('שגיאת מיקום: ' + err.message); isSharingLocation = false; updateShiftButtons();
-            }, { enableHighAccuracy: true, timeout: 15000 });
-            locationWatchId = navigator.geolocation.watchPosition(send, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+            isSharingLocation = true;
+            updateShiftButtons();
+            beginLocationWatch();
             toast('שיתוף מיקום הופעל');
         }
         async function stopLocationSharing() {
             isSharingLocation = false;
-            if (locationWatchId != null) { navigator.geolocation.clearWatch(locationWatchId); locationWatchId = null; }
-            await sb.from('tech_locations').upsert({ user_id: me.id, is_active: false, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+            if (locationWatchId != null) {
+                navigator.geolocation.clearWatch(locationWatchId);
+                locationWatchId = null;
+            }
+            if (me) {
+                await sb.from('tech_locations').upsert({
+                    user_id: me.id, is_active: false, updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+            }
             updateShiftButtons();
             toast('משמרת הסתיימה');
             if (map) loadTechLocations();
